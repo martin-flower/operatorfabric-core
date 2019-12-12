@@ -19,7 +19,7 @@ import {EventSourceInit, EventSourcePolyfill} from "ng-event-source";
 import {map, tap} from "rxjs/operators";
 import {selectTimeReference} from "@ofSelectors/time.selectors";
 import {buildConfigSelector} from "@ofSelectors/config.selectors";
-import {AuthenticationService} from "@ofServices/authentication.service";
+import {AuthenticationService} from "@ofServices/authentication/authentication.service";
 import {TickPayload} from "@ofActions/time.actions";
 
 @Injectable()

@@ -8,7 +8,7 @@
 import {inject, TestBed} from '@angular/core/testing';
 import {TokenInjector} from '@ofServices/interceptors.service';
 import {HttpRequest} from '@angular/common/http';
-import {AuthenticationService} from '@ofServices/authentication.service';
+import {AuthenticationService} from '@ofServices/authentication/authentication.service';
 import {getRandomAlphanumericValue} from '@tests/helpers';
 import createSpyObj = jasmine.createSpyObj;
 import SpyObj = jasmine.SpyObj;

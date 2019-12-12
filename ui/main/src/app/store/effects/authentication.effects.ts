@@ -20,7 +20,7 @@ import {
     TryToLogIn,
     TryToLogOut
 } from '@ofActions/authentication.actions';
-import {AuthenticationService} from '../../services/authentication.service';
+import {AuthenticationService} from '@ofServices/authentication/authentication.service';
 import {catchError, map, switchMap, tap, withLatestFrom} from 'rxjs/operators';
 import {AppState} from "@ofStore/index";
 import {Router} from "@angular/router";

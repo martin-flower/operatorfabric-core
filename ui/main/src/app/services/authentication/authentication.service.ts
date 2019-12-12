@@ -19,6 +19,8 @@ import {buildConfigSelector} from "@ofSelectors/config.selectors";
 import * as jwt_decode from "jwt-decode";
 import * as _ from "lodash";
 import {User} from "@ofModel/user.model";
+import {OAuthService} from "angular-oauth2-oidc";
+import {authConfig} from "@ofServices/authentication/auth-implicit-flow.config";
 
 export enum LocalStorageAuthContent {
     token = 'token',
@@ -51,7 +53,11 @@ export class AuthenticationService {
      * @param guidService - create and store the unique id for this application and user
      * @param store NGRX store
      */
-    constructor(private httpClient: HttpClient, private guidService: GuidService, private store: Store<AppState>) {
+    constructor(private httpClient: HttpClient
+                , private guidService: GuidService
+                , private store: Store<AppState>
+                , private oauthService:OAuthService
+    ) {
         store.select(buildConfigSelector('security'))
             .subscribe(oauth2Conf => {
                 this.assignConfigurationProperties(oauth2Conf);
@@ -270,6 +276,12 @@ export class AuthenticationService {
         else{
             window.location.href = `${this.delegateUrl}&redirect_uri=${AuthenticationService.computeRedirectUri()}`;
         }
+    }
+
+ async   public moveToImplicitFlowLoginPage(){
+        this.oauthService.configure(authConfig);
+        await this.oauthService.loadDiscoveryDocument();
+        sessionStorage.setItem('flow','implicit');
     }
 
     static computeRedirectUri(){

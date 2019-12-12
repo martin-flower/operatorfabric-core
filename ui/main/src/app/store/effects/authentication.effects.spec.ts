@@ -21,7 +21,7 @@ import {Observable, of, throwError} from 'rxjs';
 
 import {AuthenticationEffects} from './authentication.effects';
 import {Actions} from '@ngrx/effects';
-import {AuthenticationService, CheckTokenResponse, LocalStorageAuthContent} from '@ofServices/authentication.service';
+import {AuthenticationService, CheckTokenResponse, LocalStorageAuthContent} from '@ofServices/authentication/authentication.service';
 import {Guid} from 'guid-typescript';
 import {Store} from "@ngrx/store";
 import {AppState} from "@ofStore/index";

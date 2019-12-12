@@ -13,7 +13,7 @@ import {AppState} from '@ofStore/index';
 import {buildConfigSelector} from "@ofSelectors/config.selectors";
 import {filter, map} from "rxjs/operators";
 import {Observable} from "rxjs";
-import {AuthenticationService} from "@ofServices/authentication.service";
+import {AuthenticationService} from "@ofServices/authentication/authentication.service";
 import {selectMessage} from "@ofSelectors/authentication.selectors";
 import {Message, MessageLevel} from "@ofModel/message.model";
 
@@ -26,7 +26,9 @@ export class LoginComponent implements OnInit {
 
     hide: boolean;
     userForm: FormGroup;
-    useCodeFlow$: Observable<boolean>;
+    codeConf$:Observable<string>;
+    useCodeOrImplicitFlow$: Observable<boolean>;
+    authMethod: (Function)=>void;
     loginMessage: Message;
     // codeProvider$: Observable<any>;
     codeProvider: any;
@@ -34,8 +36,18 @@ export class LoginComponent implements OnInit {
     constructor( private store: Store<AppState>, private service: AuthenticationService) {}
 
     ngOnInit() {
-        this.useCodeFlow$ = this.store.select(buildConfigSelector('security.oauth2.flow.mode'))
-            .pipe(map(flowMode=>flowMode === 'CODE'));
+        this.codeConf$ = this.store.select(buildConfigSelector('security.oauth2.flow.mode'));
+        this.codeConf$.subscribe(flowMod =>{
+            console.log('=======================> config method!');
+            if(flowMod === 'CODE'){
+                console.log('==============> this a code flow!');
+                this.authMethod( this.service.moveToCodeFlowLoginPage);
+            }else if (flowMod === 'IMPLICIT'){
+                console.log('==============> this an implicit flow!');
+                this.authMethod() this.service.moveToImplicitFlowLoginPage);
+            }
+        })
+        this.useCodeOrImplicitFlow$ = this.codeConf$.pipe(map(flowMode=>flowMode === 'CODE'|| flowMode === 'IMPLICIT'));
         this.store.select(selectMessage).pipe(filter(m=>m!=null && m.level==MessageLevel.ERROR))
             .subscribe(m=>this.loginMessage=m);
         this.store.select(buildConfigSelector('security.oauth2.flow.provider'))
@@ -47,6 +59,8 @@ export class LoginComponent implements OnInit {
             }
         );
     }
+
+
 
     onSubmit(): void {
         if (this.userForm.valid) {
@@ -61,7 +75,8 @@ export class LoginComponent implements OnInit {
     }
 
     codeFlow(): void{
-        this.service.moveToCodeFlowLoginPage();
+        console.log('========================> calling authMethod');
+        this.authMethod();
     }
 
 }

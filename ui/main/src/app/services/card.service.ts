@@ -9,7 +9,7 @@ import {Injectable} from '@angular/core';
 import {Observable, of, Subject} from 'rxjs';
 import {CardOperation} from '@ofModel/card-operation.model';
 import {EventSourcePolyfill} from 'ng-event-source';
-import {AuthenticationService} from './authentication.service';
+import {AuthenticationService} from './authentication/authentication.service';
 import {Card} from '@ofModel/card.model';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '@env/environment';
