@@ -279,31 +279,41 @@ export class AuthenticationService {
     }
 
    public async moveToImplicitFlowLoginPage(){
-        console.log(`======================> Implicit flow on demand`);
-        this.oauthService.configure(authConfig);
-       this.oauthService.tokenValidationHandler = new JwksValidationHandler();
-       this.oauthService.loadDiscoveryDocumentAndTryLogin();
-
-
-       // Optional
-       this.oauthService.setupAutomaticSilentRefresh();
-
-       // Display all events
-       this.oauthService.events.subscribe(e => {
-           // tslint:disable-next-line:no-console
-           console.debug('oauth/oidc event', e);
-       });
-
-       this.oauthService.events
-           .pipe(filter(e => e.type === 'session_terminated'))
-           .subscribe(e => {
-               // tslint:disable-next-line:no-console
-               console.debug('Your session has been terminated!');
-           });
-
-        await this.oauthService.loadDiscoveryDocument();
+       // this.initAndLoadAuth();
+       this.oauthService.configure(authConfig);
+       await this.oauthService.loadDiscoveryDocument();
         sessionStorage.setItem('flow','implicit');
-        this.oauthService.initLoginFlow();
+        this.oauthService.initLoginFlow('/some-state;p1=1;p2=2');
+        // await this.oauthService.tryLogin();
+
+        console.log('================> here is id token valid?',this.oauthService.hasValidIdToken());
+    }
+
+    public async initAndLoadAuth() {
+        console.log(`======================> begining of OAuthService configuration`);
+        this.oauthService.configure(authConfig);
+        this.oauthService.tokenValidationHandler = new JwksValidationHandler();
+        await     this.oauthService.loadDiscoveryDocumentAndTryLogin();
+
+
+        // Optional
+        this.oauthService.setupAutomaticSilentRefresh();
+
+        // Display all events
+        this.oauthService.events.subscribe(e => {
+            // tslint:disable-next-line:no-console
+            console.debug('oauth/oidc event', e);
+        });
+
+        this.oauthService.events
+            .pipe(filter(e => e.type === 'session_terminated'))
+            .subscribe(e => {
+                // tslint:disable-next-line:no-console
+                console.debug('Your session has been terminated!');
+            });
+        console.log('=======================> end of OAuthService configuration');
+        this.bbbb();
+
     }
 
     static computeRedirectUri(){
@@ -329,11 +339,12 @@ export class AuthenticationService {
         console.log('==============> valid id token? ',hasValidIdToken);
         const hasValidAccessToken = this.oauthService.hasValidAccessToken();
         console.log('==============> valid access token? ',hasValidAccessToken);
-        this.oauthService.getAccessToken();
+        return  this.oauthService.getAccessToken();
+
     }
 
     public ccc(){
-        this.oauthService.requestAccessToken
+        this.oauthService.tryLogin();
     }
 }
 

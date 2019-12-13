@@ -40,9 +40,7 @@ export class LoginComponent implements OnInit {
         this.codeConf$ = this.store.select(buildConfigSelector('security.oauth2.flow.mode'));
         this.codeConf$.subscribe(flowMod =>{
             if(flowMod === 'CODE'){
-                // TODO wire correct class
-                // this.flowMoving = new CodeFlowExecutor(this.service);
-                this.flowMoving = new ImplicitFlowExecutor(this.service);
+                this.flowMoving = new CodeFlowExecutor(this.service);
             }else if (flowMod === 'IMPLICIT'){
                 this.flowMoving = new ImplicitFlowExecutor( this.service);
             }

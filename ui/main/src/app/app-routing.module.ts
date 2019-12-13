@@ -7,7 +7,6 @@
 
 import {NgModule} from '@angular/core';
 import {PreloadAllModules, RouterModule, Routes} from '@angular/router';
-// import {AuthenticationGuard} from '@ofServices/guard.service';
 import {LoginComponent} from './components/login/login.component';
 
 const routes: Routes = [
@@ -44,8 +43,14 @@ const routes: Routes = [
 // TODO manage visible path more gently
 export const navigationRoutes: Routes = routes.slice(0, 2);
 
+
 @NgModule({
-    imports: [RouterModule.forRoot(routes,{ enableTracing: false, preloadingStrategy: PreloadAllModules })],
+    imports: [RouterModule.forRoot(routes,{ enableTracing: false, preloadingStrategy:
+        PreloadAllModules,
+        initialNavigation: false /* needed to enable authentication implicit flow otherwise HashLocationStrategy
+        by handling '#' in the window location brake it.
+        */
+    })],
     exports: [RouterModule]
 })
 export class AppRoutingModule {

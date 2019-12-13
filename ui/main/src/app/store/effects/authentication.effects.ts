@@ -67,7 +67,7 @@ export class AuthenticationEffects {
                 map((loadConfigSuccess: LoadConfigSuccess) => {
                     const flowMode = loadConfigSuccess.payload.config.security.oauth2.flow.mode;
                     if (flowMode && flowMode === 'IMPLICIT') {
-                        console.log('=========================> Implicit flow!');
+                        console.log('=========================> Send an CheckImplicitFlowAuthentication Action.');
                         return new CheckImplicitFlowAuthenticationStatus();
                     } else {
                         console.log('==============> mode:', flowMode);
@@ -139,7 +139,7 @@ export class AuthenticationEffects {
      * This {Effect} should be called as a consequence of a {TryLogOut} action
      *
      * @member
-     * @name AcceptLogOut
+     * @name AcceptLogOutImplicit flow on demand
      * @typedef {Observable<AuthenticationActions>}
      *
      */

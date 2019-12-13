@@ -14,7 +14,7 @@ import {InitAuthStatus} from '@ofActions/authentication.actions';
 import {AppState} from '@ofStore/index';
 import {selectCurrentUrl, selectRouterState} from '@ofSelectors/router.selectors';
 import {selectExpirationTime} from '@ofSelectors/authentication.selectors';
-import {isInTheFuture} from "@ofServices/authentication/authentication.service";
+import {AuthenticationService, isInTheFuture} from "@ofServices/authentication/authentication.service";
 import {LoadConfig} from "@ofActions/config.actions";
 import {selectConfigLoaded, selectMaxedRetries} from "@ofSelectors/config.selectors";
 import {I18nService} from "@ofServices/i18n.service";
@@ -40,8 +40,12 @@ export class AppComponent implements OnInit {
      */
     constructor(private store: Store<AppState>,
                 private i18nService:I18nService,
-                private titleService:Title) {
+                private titleService:Title
+    ,private authenticationService: AuthenticationService) {
         this.getRoutePE = this.store.pipe(select(selectRouterState));
+        if(sessionStorage.getItem('flow')=== 'implicit'){
+            this.authenticationService.initAndLoadAuth();
+        }
     }
 
     public setTitle(newTitle:string) {

@@ -40,7 +40,7 @@ library.add(faSignOutAlt)
         BrowserAnimationsModule,
         FormsModule,
         ReactiveFormsModule,
-        AppRoutingModule,
+        OAuthModule.forRoot(),
         HttpClientModule,
         StateModule.forRoot(),
         ServicesModule.forRoot(),
@@ -48,7 +48,7 @@ library.add(faSignOutAlt)
         TranslateModule.forRoot(translateConfig),
         FontAwesomeModule,
         UtilitiesModule,
-        OAuthModule.forRoot()
+        AppRoutingModule
     ],
     declarations: [AppComponent, NavbarComponent, LoginComponent, IconComponent, InfoComponent, MenuLinkComponent, CustomLogoComponent],
     providers: [ { provide: LocationStrategy, useClass: HashLocationStrategy }],
