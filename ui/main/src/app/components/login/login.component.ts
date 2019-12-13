@@ -16,6 +16,7 @@ import {Observable} from "rxjs";
 import {AuthenticationService} from "@ofServices/authentication/authentication.service";
 import {selectMessage} from "@ofSelectors/authentication.selectors";
 import {Message, MessageLevel} from "@ofModel/message.model";
+import {OAuthService} from "angular-oauth2-oidc";
 
 @Component({
     selector: 'of-login',
@@ -28,7 +29,7 @@ export class LoginComponent implements OnInit {
     userForm: FormGroup;
     codeConf$:Observable<string>;
     useCodeOrImplicitFlow$: Observable<boolean>;
-    authMethod: (Function)=>void;
+    flowMoving: FlowExecutor;
     loginMessage: Message;
     // codeProvider$: Observable<any>;
     codeProvider: any;
@@ -38,13 +39,12 @@ export class LoginComponent implements OnInit {
     ngOnInit() {
         this.codeConf$ = this.store.select(buildConfigSelector('security.oauth2.flow.mode'));
         this.codeConf$.subscribe(flowMod =>{
-            console.log('=======================> config method!');
             if(flowMod === 'CODE'){
-                console.log('==============> this a code flow!');
-                this.authMethod( this.service.moveToCodeFlowLoginPage);
+                // TODO wire correct class
+                // this.flowMoving = new CodeFlowExecutor(this.service);
+                this.flowMoving = new ImplicitFlowExecutor(this.service);
             }else if (flowMod === 'IMPLICIT'){
-                console.log('==============> this an implicit flow!');
-                this.authMethod() this.service.moveToImplicitFlowLoginPage);
+                this.flowMoving = new ImplicitFlowExecutor( this.service);
             }
         })
         this.useCodeOrImplicitFlow$ = this.codeConf$.pipe(map(flowMode=>flowMode === 'CODE'|| flowMode === 'IMPLICIT'));
@@ -75,8 +75,25 @@ export class LoginComponent implements OnInit {
     }
 
     codeFlow(): void{
-        console.log('========================> calling authMethod');
-        this.authMethod();
+        this.flowMoving.move();
     }
 
+}
+
+interface FlowExecutor {
+    move():void;
+}
+
+class ImplicitFlowExecutor implements FlowExecutor{
+    constructor(private oauthService: AuthenticationService){}
+    move(){
+        this.oauthService.moveToImplicitFlowLoginPage();
+    }
+}
+
+class CodeFlowExecutor implements FlowExecutor{
+    constructor(private oauthService: AuthenticationService){}
+    move(){
+        this.oauthService.moveToCodeFlowLoginPage()
+    }
 }

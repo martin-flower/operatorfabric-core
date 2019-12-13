@@ -16,15 +16,17 @@ import {
     AuthenticationActions,
     AuthenticationActionTypes,
     CheckAuthenticationStatus,
+    CheckImplicitFlowAuthenticationStatus,
     RejectLogIn,
     TryToLogIn,
-    TryToLogOut
+    TryToLogOut,
+    UselessAuthAction
 } from '@ofActions/authentication.actions';
 import {AuthenticationService} from '@ofServices/authentication/authentication.service';
 import {catchError, map, switchMap, tap, withLatestFrom} from 'rxjs/operators';
 import {AppState} from "@ofStore/index";
 import {Router} from "@angular/router";
-import {ConfigActionTypes} from "@ofActions/config.actions";
+import {ConfigActionTypes, LoadConfigSuccess} from "@ofActions/config.actions";
 import {selectCode} from "@ofSelectors/authentication.selectors";
 import {Message, MessageLevel} from "@ofModel/message.model";
 import {I18n} from "@ofModel/i18n.model";
@@ -40,7 +42,7 @@ import {ClearCard} from "@ofActions/card.actions";
 export class AuthenticationEffects {
 
     /**
-     * @constructor
+     * @constructorCheckImplicitFlowAuthenticationStatus
      * @param store - {Store<AppState>} state manager
      * @param actions$ - {Action} {Observable} of Action of the Application
      * @param authService - service implementing the authentication business rules
@@ -62,7 +64,16 @@ export class AuthenticationEffects {
         this.actions$
             .pipe(
                 ofType(ConfigActionTypes.LoadConfigSuccess),
-                map(() => new CheckAuthenticationStatus())
+                map((loadConfigSuccess: LoadConfigSuccess) => {
+                    const flowMode = loadConfigSuccess.payload.config.security.oauth2.flow.mode;
+                    if (flowMode && flowMode === 'IMPLICIT') {
+                        console.log('=========================> Implicit flow!');
+                        return new CheckImplicitFlowAuthenticationStatus();
+                    } else {
+                        console.log('==============> mode:', flowMode);
+                    }
+                    return new CheckAuthenticationStatus()
+                })
             );
 
     /**
@@ -89,7 +100,7 @@ export class AuthenticationEffects {
                     return this.authService.askTokenFromPassword(payload.username, payload.password).pipe(
                         map(authenticationInfo => new AcceptLogIn(authenticationInfo)),
                         catchError(errorResponse => {
-                            return this.handleErrorOnTokenGeneration(errorResponse,'authenticate');
+                                return this.handleErrorOnTokenGeneration(errorResponse, 'authenticate');
                             }
                         ));
                 })
@@ -112,7 +123,7 @@ export class AuthenticationEffects {
             ofType(AuthenticationActionTypes.TryToLogOut),
             switchMap((action: TryToLogOut) => {
                 this.resetState();
-                return of(new EmptyLightCards(),new ClearCard(), new AcceptLogOut());
+                return of(new EmptyLightCards(), new ClearCard(), new AcceptLogOut());
             })
         );
 
@@ -193,7 +204,7 @@ export class AuthenticationEffects {
                                 return this.authService.askTokenFromCode(code).pipe(
                                     map(authenticationInfo => new AcceptLogIn(authenticationInfo)),
                                     catchError(errorResponse => {
-                                            return this.handleErrorOnTokenGeneration(errorResponse,'code');
+                                            return this.handleErrorOnTokenGeneration(errorResponse, 'code');
                                         }
                                     ));
                             return of(this.handleRejectedLogin(new Message('The stored token is invalid',
@@ -225,7 +236,18 @@ export class AuthenticationEffects {
                 })
             );
 
-    handleErrorOnTokenGeneration(errorResponse,category:string) {
+
+    @Effect()
+    CheckImplicitFlowAuthentication: Observable<AuthenticationActions> =
+        this.actions$
+            .pipe(ofType(AuthenticationActionTypes.CheckImplicitFlowAuthenticationStatus),
+                map(action => {
+                    console.log('================> access token:', this.authService.bbbb());
+                    return new UselessAuthAction();
+                }));
+
+
+    handleErrorOnTokenGeneration(errorResponse, category: string) {
         let message, key;
         let params = new Map<string>()
         switch (errorResponse.status) {

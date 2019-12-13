@@ -8,7 +8,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable, of, throwError} from 'rxjs';
-import {catchError, map, switchMap, tap} from 'rxjs/operators';
+import {catchError, map, switchMap, tap, filter} from 'rxjs/operators';
 import {Guid} from 'guid-typescript';
 import {PayloadForSuccessfulAuthentication} from '@ofActions/authentication.actions';
 import {environment} from "@env/environment";
@@ -19,7 +19,7 @@ import {buildConfigSelector} from "@ofSelectors/config.selectors";
 import * as jwt_decode from "jwt-decode";
 import * as _ from "lodash";
 import {User} from "@ofModel/user.model";
-import {OAuthService} from "angular-oauth2-oidc";
+import {JwksValidationHandler, OAuthService} from "angular-oauth2-oidc";
 import {authConfig} from "@ofServices/authentication/auth-implicit-flow.config";
 
 export enum LocalStorageAuthContent {
@@ -61,8 +61,8 @@ export class AuthenticationService {
         store.select(buildConfigSelector('security'))
             .subscribe(oauth2Conf => {
                 this.assignConfigurationProperties(oauth2Conf);
-
             });
+        this.aaaa();
     }
 
     assignConfigurationProperties(oauth2Conf) {
@@ -168,7 +168,7 @@ export class AuthenticationService {
                 }),
                 catchError(e=>of(auth))
             );
-    }
+    }return
 
     private static handleError(error: any) {
         console.error(error);
@@ -278,10 +278,32 @@ export class AuthenticationService {
         }
     }
 
- async   public moveToImplicitFlowLoginPage(){
+   public async moveToImplicitFlowLoginPage(){
+        console.log(`======================> Implicit flow on demand`);
         this.oauthService.configure(authConfig);
+       this.oauthService.tokenValidationHandler = new JwksValidationHandler();
+       this.oauthService.loadDiscoveryDocumentAndTryLogin();
+
+
+       // Optional
+       this.oauthService.setupAutomaticSilentRefresh();
+
+       // Display all events
+       this.oauthService.events.subscribe(e => {
+           // tslint:disable-next-line:no-console
+           console.debug('oauth/oidc event', e);
+       });
+
+       this.oauthService.events
+           .pipe(filter(e => e.type === 'session_terminated'))
+           .subscribe(e => {
+               // tslint:disable-next-line:no-console
+               console.debug('Your session has been terminated!');
+           });
+
         await this.oauthService.loadDiscoveryDocument();
         sessionStorage.setItem('flow','implicit');
+        this.oauthService.initLoginFlow();
     }
 
     static computeRedirectUri(){
@@ -298,7 +320,24 @@ export class AuthenticationService {
             return null;
         }
     }
+
+    public aaaa(){
+        this.oauthService.events.subscribe(e => console.log('=================> OAuth2 events:', e));
+    }
+    public bbbb(){
+        const hasValidIdToken = this.oauthService.hasValidIdToken();
+        console.log('==============> valid id token? ',hasValidIdToken);
+        const hasValidAccessToken = this.oauthService.hasValidAccessToken();
+        console.log('==============> valid access token? ',hasValidAccessToken);
+        this.oauthService.getAccessToken();
+    }
+
+    public ccc(){
+        this.oauthService.requestAccessToken
+    }
 }
+
+
 
 /**
  * class used to try to login using the authentication web service.
