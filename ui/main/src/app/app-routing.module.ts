@@ -43,13 +43,18 @@ const routes: Routes = [
 // TODO manage visible path more gently
 export const navigationRoutes: Routes = routes.slice(0, 2);
 
+export function isCurrentFlowStoredInSessionDifferentFromImplicit(): boolean {
+    return !(sessionStorage.getItem('flow') && sessionStorage.getItem('flow') === 'implicit')
+}
 
 @NgModule({
-    imports: [RouterModule.forRoot(routes,{ enableTracing: false, preloadingStrategy:
+    imports: [RouterModule.forRoot(routes, {
+        enableTracing: false, preloadingStrategy:
         PreloadAllModules,
-        initialNavigation: false /* needed to enable authentication implicit flow otherwise HashLocationStrategy
-        by handling '#' in the window location brake it.
+        /* initialNavigation needed to enable authentication implicit flow otherwise HashLocationStrategy brokes it
+        *  by handling '#' within `window.location`.
         */
+        initialNavigation: isCurrentFlowStoredInSessionDifferentFromImplicit()
     })],
     exports: [RouterModule]
 })
