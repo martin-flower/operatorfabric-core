@@ -21,6 +21,9 @@ export enum AuthenticationActionTypes {
     AcceptLogOutSuccess = '[Authentication] Success Accept the user log out attempt',
     CheckImplicitFlowAuthenticationStatus = '[Authentication] Check Authentication Status specifically for the Implicit Flow',
     UselessAuthAction = '[Authentication] test purpose action'
+    // TODO the following actions should be merge with password and code flow management of authentication
+    , ImplicitallyAuthenticated = '[Authentication] user is authentication using Implicit Flow' //
+    , UnAuthenticationFromImplicitFlow = '[Authentication[ user is log out by implicit Flow internal managment'
 }
 
 /**
@@ -155,6 +158,14 @@ export class UselessAuthAction implements  Action{
     readonly type = AuthenticationActionTypes.UselessAuthAction;
 
 }
+
+export class ImplicitallyAuthenticated implements Action {
+    readonly type = AuthenticationActionTypes.ImplicitallyAuthenticated;
+}
+
+export class UnAuthenticationFromImplicitFlow implements Action {
+    readonly type = AuthenticationActionTypes.UnAuthenticationFromImplicitFlow;
+}
 export type AuthenticationActions =
     InitAuthStatus
     | AcceptLogIn
@@ -165,4 +176,6 @@ export type AuthenticationActions =
     | AcceptLogOut
     | AcceptLogOutSuccess
     | CheckImplicitFlowAuthenticationStatus
-    | UselessAuthAction;
+    | UselessAuthAction
+    | ImplicitallyAuthenticated
+    |UnAuthenticationFromImplicitFlow;

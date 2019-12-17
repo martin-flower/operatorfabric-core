@@ -10,7 +10,12 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable, of, throwError} from 'rxjs';
 import {catchError, map, switchMap, tap, filter} from 'rxjs/operators';
 import {Guid} from 'guid-typescript';
-import {PayloadForSuccessfulAuthentication} from '@ofActions/authentication.actions';
+import {
+    PayloadForSuccessfulAuthentication,
+    UselessAuthAction,
+    ImplicitallyAuthenticated,
+    UnAuthenticationFromImplicitFlow
+} from '@ofActions/authentication.actions';
 import {environment} from "@env/environment";
 import {GuidService} from "@ofServices/guid.service";
 import {AppState} from "@ofStore/index";
@@ -19,7 +24,16 @@ import {buildConfigSelector} from "@ofSelectors/config.selectors";
 import * as jwt_decode from "jwt-decode";
 import * as _ from "lodash";
 import {User} from "@ofModel/user.model";
-import {JwksValidationHandler, OAuthService} from "angular-oauth2-oidc";
+import {
+    JwksValidationHandler,
+    OAuthEvent,
+    OAuthService,
+    EventType as OAuthType,
+    // token_received,
+    // token_error,
+    // token_refresh_error,
+    // logout
+} from "angular-oauth2-oidc";
 import {authConfig} from "@ofServices/authentication/auth-implicit-flow.config";
 
 export enum LocalStorageAuthContent {
@@ -54,9 +68,9 @@ export class AuthenticationService {
      * @param store NGRX store
      */
     constructor(private httpClient: HttpClient
-                , private guidService: GuidService
-                , private store: Store<AppState>
-                , private oauthService:OAuthService
+        , private guidService: GuidService
+        , private store: Store<AppState>
+        , private oauthService: OAuthService
     ) {
         store.select(buildConfigSelector('security'))
             .subscribe(oauth2Conf => {
@@ -154,11 +168,11 @@ export class AuthenticationService {
             map((auth: AuthObject) => this.convert(auth)),
             tap(AuthenticationService.saveAuthenticationInformation),
             catchError(AuthenticationService.handleError),
-            switchMap((auth)=>this.loadUserData(auth))
+            switchMap((auth) => this.loadUserData(auth))
         );
     }
 
-    public loadUserData(auth:PayloadForSuccessfulAuthentication):Observable<PayloadForSuccessfulAuthentication> {
+    public loadUserData(auth: PayloadForSuccessfulAuthentication): Observable<PayloadForSuccessfulAuthentication> {
         return this.httpClient.get<User>(`${this.userDataUrl}/${auth.identifier}`)
             .pipe(
                 map(u => {
@@ -166,9 +180,11 @@ export class AuthenticationService {
                     auth.lastName = u.lastName;
                     return auth;
                 }),
-                catchError(e=>of(auth))
+                catchError(e => of(auth))
             );
-    }return
+    }
+
+    return
 
     private static handleError(error: any) {
         console.error(error);
@@ -235,10 +251,9 @@ export class AuthenticationService {
     }
 
 
-
     /**
      * helper method to convert an {AuthObject} instance into a {PayloadForSuccessfulAuthentication} instance.
-     * @param payload
+     * @param payloadCheckImplicitFlowAuthenticationStatus
      */
     public convert(payload: AuthObject):
         PayloadForSuccessfulAuthentication {
@@ -271,29 +286,29 @@ export class AuthenticationService {
     public moveToCodeFlowLoginPage() {
         if (!this.clientId || !this.clientSecret)
             return throwError('The authentication service is no correctly iniitialized');
-        if(!this.delegateUrl)
+        if (!this.delegateUrl)
             window.location.href = `${environment.urls.auth}/code/redirect_uri=${AuthenticationService.computeRedirectUri()}`;
-        else{
+        else {
             window.location.href = `${this.delegateUrl}&redirect_uri=${AuthenticationService.computeRedirectUri()}`;
         }
     }
 
-   public async moveToImplicitFlowLoginPage(){
-       // this.initAndLoadAuth();
-       this.oauthService.configure(authConfig);
-       await this.oauthService.loadDiscoveryDocument();
-        sessionStorage.setItem('flow','implicit');
+    public async moveToImplicitFlowLoginPage() {
+        // this.initAndLoadAuth();
+        this.oauthService.configure(authConfig);
+        await this.oauthService.loadDiscoveryDocument();
+        sessionStorage.setItem('flow', 'implicit');
         this.oauthService.initLoginFlow('/some-state;p1=1;p2=2');
         // await this.oauthService.tryLogin();
 
-        console.log('================> here is id token valid?',this.oauthService.hasValidIdToken());
+        console.log('================> here is id token valid?', this.oauthService.hasValidIdToken());
     }
 
     public async initAndLoadAuth() {
         console.log(`======================> begining of OAuthService configuration`);
         this.oauthService.configure(authConfig);
         this.oauthService.tokenValidationHandler = new JwksValidationHandler();
-        await     this.oauthService.loadDiscoveryDocumentAndTryLogin();
+        await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
 
         // Optional
@@ -316,38 +331,62 @@ export class AuthenticationService {
 
     }
 
-    static computeRedirectUri(){
+    static computeRedirectUri() {
         const uriBase = location.origin;
-        const pathEnd = (location.pathname.length > 1)?location.pathname:'';
+        const pathEnd = (location.pathname.length > 1) ? location.pathname : '';
         return `${uriBase}${pathEnd}`
     }
 
     static decodeToken(token: string): any {
         try {
             return jwt_decode(token);
-        }
-        catch (Error) {
+        } catch (Error) {
             return null;
         }
     }
 
-    public aaaa(){
-        this.oauthService.events.subscribe(e => console.log('=================> OAuth2 events:', e));
+    public aaaa() {
+        this.oauthService.events.subscribe(e => {
+            console.log('=================> OAuth2 events:', e);
+            this.dispatchAppStateActionFromOAuth2Events(e);
+            console.log('==================> an action should have been dispatched');
+        });
     }
-    public bbbb(){
+
+    public bbbb() {
         const hasValidIdToken = this.oauthService.hasValidIdToken();
-        console.log('==============> valid id token? ',hasValidIdToken);
+        console.log('==============> valid id token? ', hasValidIdToken);
         const hasValidAccessToken = this.oauthService.hasValidAccessToken();
-        console.log('==============> valid access token? ',hasValidAccessToken);
-        return  this.oauthService.getAccessToken();
+        console.log('==============> valid access token? ', hasValidAccessToken);
+        return this.oauthService.getAccessToken();
 
     }
 
-    public ccc(){
+    public ccc() {
         this.oauthService.tryLogin();
     }
-}
 
+    dispatchAppStateActionFromOAuth2Events(event: OAuthEvent): void {
+        const eventType: OAuthType = event.type;
+        switch (eventType) {
+            case ('token_received'): {
+                this.store.dispatch(new ImplicitallyAuthenticated());
+                break;
+            }
+            case ('token_error'):
+            case('token_refresh_error'):
+            case('logout'): {
+                this.store.dispatch(new UnAuthenticationFromImplicitFlow());
+                break;
+            }
+            default: {
+               console.log('================> nothing to do for:',eventType);
+            }
+
+        }
+    }
+
+}
 
 
 /**

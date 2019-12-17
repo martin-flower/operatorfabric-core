@@ -43,6 +43,7 @@ const routes: Routes = [
 // TODO manage visible path more gently
 export const navigationRoutes: Routes = routes.slice(0, 2);
 
+// TODO moves to Auth management
 export function isCurrentFlowStoredInSessionDifferentFromImplicit(): boolean {
     return !(sessionStorage.getItem('flow') && sessionStorage.getItem('flow') === 'implicit')
 }

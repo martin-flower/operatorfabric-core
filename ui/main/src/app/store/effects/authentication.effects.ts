@@ -242,6 +242,7 @@ export class AuthenticationEffects {
         this.actions$
             .pipe(ofType(AuthenticationActionTypes.CheckImplicitFlowAuthenticationStatus),
                 map(action => {
+                    this.authService.initAndLoadAuth();
                     console.log('================> access token:', this.authService.bbbb());
                     return new UselessAuthAction();
                 }));

@@ -13,7 +13,7 @@ import {map} from 'rxjs/operators';
 import {InitAuthStatus} from '@ofActions/authentication.actions';
 import {AppState} from '@ofStore/index';
 import {selectCurrentUrl, selectRouterState} from '@ofSelectors/router.selectors';
-import {selectExpirationTime} from '@ofSelectors/authentication.selectors';
+import {selectExpirationTime, selectIsImplicitallyAuthenticated} from '@ofSelectors/authentication.selectors';
 import {AuthenticationService, isInTheFuture} from "@ofServices/authentication/authentication.service";
 import {LoadConfig} from "@ofActions/config.actions";
 import {selectConfigLoaded, selectMaxedRetries} from "@ofSelectors/config.selectors";
@@ -30,8 +30,9 @@ export class AppComponent implements OnInit {
     getRoutePE: Observable<any>;
     currentPath: any;
     isAuthenticated$: boolean = false;
-    configLoaded: boolean = false ;
+    configLoaded: boolean = false;
     private maxedRetries: boolean = false;
+    private authenticationModeHandler: AuthenticatinoFlowHandler;
 
     /**
      * NB: I18nService is injected to trigger its constructor at application startup
@@ -39,16 +40,20 @@ export class AppComponent implements OnInit {
      * @param i18nService
      */
     constructor(private store: Store<AppState>,
-                private i18nService:I18nService,
-                private titleService:Title
-    ,private authenticationService: AuthenticationService) {
+                private i18nService: I18nService,
+                private titleService: Title
+        , private authenticationService: AuthenticationService) {
         this.getRoutePE = this.store.pipe(select(selectRouterState));
-        if(sessionStorage.getItem('flow')=== 'implicit'){
-            this.authenticationService.initAndLoadAuth();
+        if (isSessionAuthFlowSetted2Implicit()) {
+            this.authenticationModeHandler = new ImplicitFlowHandler(this.authenticationService,this.store);
+        }else{
+            this.authenticationModeHandler = new PasswordOrCodeFlowHandler(this.store);
         }
+        console.log('==============> flowHandler:',this.authenticationModeHandler.iam());
     }
 
-    public setTitle(newTitle:string) {
+
+    public setTitle(newTitle: string) {
         this.titleService.setTitle(newTitle);
     }
 
@@ -59,20 +64,27 @@ export class AppComponent implements OnInit {
     ngOnInit() {
         console.log(`location: ${location.href}`)
         let i = window.location.href.indexOf('code');
-        if(i != -1){
-            this.store.dispatch(new InitAuthStatus({code:window.location.href.substring(i + 5)}))
-        }
+        // if (i != -1) {
+        //     this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(i + 5)}))
+        // }
+        // if (isSessionAuthFlowSetted2Implicit()) {
+        //     this.authenticationService.initAndLoadAuth();
+        // }
+        this.authenticationModeHandler.initAuth();
         this.store.pipe(select(selectCurrentUrl)).subscribe(url => this.currentPath = url);
-        this.store.pipe(select(selectExpirationTime),
-            map(isInTheFuture)
-                        ).subscribe(isAUth => this.isAuthenticated$ = isAUth);
+        // this.store.pipe(select(selectExpirationTime),
+        //     map(isInTheFuture)
+        // ).subscribe(isAUth => this.isAuthenticated$ = isAUth);
+        this.authenticationModeHandler.linkAuthenticationStatus(
+            (isAuthenticated: boolean) => {
+                this.isAuthenticated$ = isAuthenticated;
+            });
         this.store
             .select(selectConfigLoaded)
             .subscribe(loaded => this.configLoaded = loaded);
         this.store
             .select(selectMaxedRetries)
-            .subscribe((maxedRetries=>this.maxedRetries=maxedRetries));
-        // First Action send by the application, is the user currently authenticated ?
+            .subscribe((maxedRetries => this.maxedRetries = maxedRetries));
         this.store.dispatch(new LoadConfig());
 
         const sTitle = this.store.select(buildConfigSelector('title', this.title));
@@ -80,4 +92,66 @@ export class AppComponent implements OnInit {
             this.setTitle(data);
         })
     }
+
+
+}
+
+export function isSessionAuthFlowSetted2Implicit(): boolean {
+    const flow = sessionStorage.getItem('flow');
+    console.log('===================> flow from session storage',flow);
+    return flow && flow === 'implicit';
+}
+
+
+export interface AuthenticatinoFlowHandler {
+    initAuth(): void;
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
+
+    dispatchAction(): void;
+
+    iam():string;
+}
+
+export class PasswordOrCodeFlowHandler implements AuthenticatinoFlowHandler {
+    constructor(private store: Store<AppState>) {
+    }
+
+    initAuth() {
+        // nothing to do for password or code flows
+    }
+
+    dispatchAction() {
+        let i = window.location.href.indexOf('code');
+        if (i != -1) {
+            this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(i + 5)}))
+        }
+    }
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
+        this.store.pipe(select(selectExpirationTime), map(isInTheFuture))
+            .subscribe(linker);
+    }
+    iam(){return 'PasswordOrCodeFlowHandler'};
+}
+
+export class ImplicitFlowHandler implements AuthenticatinoFlowHandler {
+
+    constructor(private authenticationService: AuthenticationService, private store: Store<AppState>) {
+    }
+
+    initAuth(): void {
+        if (isSessionAuthFlowSetted2Implicit()) {
+            this.authenticationService.initAndLoadAuth();
+        }
+    }
+
+    dispatchAction(): void {// nothing to do for the moment for Implicit flow it's manage by authenticatino service
+    }
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
+        //need to find a way to have a dynamic
+        this.store.pipe(select(selectIsImplicitallyAuthenticated)).subscribe(linker)
+    }
+    iam(){return 'ImplicitFlowHandler'};
 }
