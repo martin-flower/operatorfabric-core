@@ -192,7 +192,7 @@ export class AuthenticationEffects {
             .pipe(
                 ofType(AuthenticationActionTypes.CheckAuthenticationStatus),
                 switchMap(() => {
-                    return this.authService.checkAuthentication(AuthenticationService.extractToken())
+                    return this.authService.checkAuthentication(this.authService.extractToken())
                         .pipe(catchError(() => of(null)));
 
                 }),

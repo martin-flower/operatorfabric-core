@@ -146,7 +146,7 @@ export class ImplicitFlowHandler implements AuthenticatinoFlowHandler {
         }
     }
 
-    dispatchAction(): void {// nothing to do for the moment for Implicit flow it's manage by authenticatino service
+    dispatchAction(): void {// nothing to do for the moment for Implicit flow it's managed by authenticatino service
     }
 
     linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {

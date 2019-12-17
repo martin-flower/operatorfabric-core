@@ -8,12 +8,11 @@
 import {Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable, of, throwError} from 'rxjs';
-import {catchError, map, switchMap, tap, filter} from 'rxjs/operators';
+import {catchError, filter, map, switchMap, tap} from 'rxjs/operators';
 import {Guid} from 'guid-typescript';
 import {
-    PayloadForSuccessfulAuthentication,
-    UselessAuthAction,
     ImplicitallyAuthenticated,
+    PayloadForSuccessfulAuthentication,
     UnAuthenticationFromImplicitFlow
 } from '@ofActions/authentication.actions';
 import {environment} from "@env/environment";
@@ -24,17 +23,8 @@ import {buildConfigSelector} from "@ofSelectors/config.selectors";
 import * as jwt_decode from "jwt-decode";
 import * as _ from "lodash";
 import {User} from "@ofModel/user.model";
-import {
-    JwksValidationHandler,
-    OAuthEvent,
-    OAuthService,
-    EventType as OAuthType,
-    // token_received,
-    // token_error,
-    // token_refresh_error,
-    // logout
-} from "angular-oauth2-oidc";
-import {authConfig} from "@ofServices/authentication/auth-implicit-flow.config";
+import {EventType as OAuthType, JwksValidationHandler, OAuthEvent, OAuthService,} from "angular-oauth2-oidc";
+import {authConfig} from '@ofServices/authentication/auth-implicit-flow.config';
 
 export enum LocalStorageAuthContent {
     token = 'token',
@@ -60,6 +50,8 @@ export class AuthenticationService {
     private delegateUrl: string;
     private givenNameClaim: string;
     private familyNameClaim: string;
+    private mode: string;
+    private authModeHandler= new PasswordOrCodeAuthenticationHandler();
 
     /**
      * @constructor
@@ -75,6 +67,12 @@ export class AuthenticationService {
         store.select(buildConfigSelector('security'))
             .subscribe(oauth2Conf => {
                 this.assignConfigurationProperties(oauth2Conf);
+                if (this.mode.toLowerCase() === 'implicit') {
+                    this.authModeHandler = new ImplicitAuthenticationHandler();
+                } else {
+                    this.authModeHandler = new PasswordOrCodeAuthenticationHandler();
+                }
+                console.log('===================> mode handler:', this.authModeHandler.iam());
             });
         this.aaaa();
     }
@@ -87,6 +85,7 @@ export class AuthenticationService {
         this.givenNameClaim = _.get(oauth2Conf, 'jwt.given-name-claim', 'given_name');
         this.familyNameClaim = _.get(oauth2Conf, 'jwt.family-name-claim', 'family_name');
         this.expireClaim = _.get(oauth2Conf, 'jwt.expire-claim', 'exp');
+        this.mode = _.get(oauth2Conf, 'oauth2.flow.mode', 'PASSWORD');
     }
 
     /**
@@ -194,8 +193,13 @@ export class AuthenticationService {
     /**
      * extract the jwt authentication token from the localstorage
      */
-    static extractToken(): string {
-        return localStorage.getItem(LocalStorageAuthContent.token);
+    public extractToken(): string {
+
+        const currentAuthModeHandler = this.authModeHandler;
+        console.log('==============> current authentication mode handler',currentAuthModeHandler.iam());
+        const accessToken = currentAuthModeHandler.extractToken();
+        console.log('==================> accessToken within extractToken', accessToken)
+        return accessToken;
     }
 
     /**
@@ -274,13 +278,12 @@ export class AuthenticationService {
             jwt[this.givenNameClaim],
             jwt[this.familyNameClaim]
         );
-    }
-
+    }        // await this.oauthService.tryLogin();
     /**
      * helper method to put the jwt token into an appropriate string usable as an http header
      */
-    static getSecurityHeader() {
-        return {'Authorization': `Bearer ${AuthenticationService.extractToken()}`};
+    public getSecurityHeader() {
+        return {'Authorization': `Bearer ${this.extractToken()}`};
     }
 
     public moveToCodeFlowLoginPage() {
@@ -299,7 +302,6 @@ export class AuthenticationService {
         await this.oauthService.loadDiscoveryDocument();
         sessionStorage.setItem('flow', 'implicit');
         this.oauthService.initLoginFlow('/some-state;p1=1;p2=2');
-        // await this.oauthService.tryLogin();
 
         console.log('================> here is id token valid?', this.oauthService.hasValidIdToken());
     }
@@ -316,7 +318,7 @@ export class AuthenticationService {
 
         // Display all events
         this.oauthService.events.subscribe(e => {
-            // tslint:disable-next-line:no-console
+            // tslint:disable-neauthModeHandlerxt-line:no-console
             console.debug('oauth/oidc event', e);
         });
 
@@ -373,6 +375,7 @@ export class AuthenticationService {
                 this.store.dispatch(new ImplicitallyAuthenticated());
                 break;
             }
+
             case ('token_error'):
             case('token_refresh_error'):
             case('logout'): {
@@ -380,10 +383,14 @@ export class AuthenticationService {
                 break;
             }
             default: {
-               console.log('================> nothing to do for:',eventType);
+                console.log('================> nothing to do for:', eventType);
             }
 
         }
+    }
+
+    public getAuthenticationMode(): string {
+        return this.mode;
     }
 
 }
@@ -396,13 +403,15 @@ export class AuthObject {
 
     constructor(
         public access_token: string,
-        public expires_in: number,
+        public expires_in: number,    // token_received,
+
         public clientId: Guid,
         public identifier?: string
     ) {
     }
 
-}
+}    // token_received,
+
 
 /**
  * class corresponding to the response of the web service checking jwt token when this token is a valid one.
@@ -424,4 +433,30 @@ export class CheckTokenResponse {
  */
 export function isInTheFuture(time: number): boolean {
     return time > Date.now();
+}
+
+
+export interface AuthenticationModeHandler {
+    extractToken(): string;
+    iam(): string;
+}
+
+export class PasswordOrCodeAuthenticationHandler implements AuthenticationModeHandler {
+    public extractToken(): string {
+        return localStorage.getItem(LocalStorageAuthContent.token);
+    }
+    iam(): string {
+        return 'password or code handler';
+    }
+}
+
+export class ImplicitAuthenticationHandler implements AuthenticationModeHandler {
+    public  extractToken(): string {
+        const accessToken = sessionStorage.getItem('access_token');
+        console.log('======================> access_token from session.storage:', accessToken);
+        return accessToken;
+    }
+    iam(): string {
+        return 'implicit mode handler';
+    }
 }

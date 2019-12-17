@@ -27,7 +27,9 @@ export class CardService {
 
 
     constructor(private httpClient: HttpClient,
-        private guidService: GuidService, private timeService: TimeService) {
+                private guidService: GuidService,
+                private timeService: TimeService,
+                private authService: AuthenticationService) {
         const clientId = this.guidService.getCurrentGuidString();
         this.cardOperationsUrl = `${environment.urls.cards}/cardSubscription?clientId=${clientId}`;
         this.cardsUrl = `${environment.urls.cards}/cards`;
@@ -44,7 +46,7 @@ export class CardService {
         //security header needed here as SSE request are not intercepted by our header interceptor
         return this.fetchCardOperation(new EventSourcePolyfill(
             `${this.cardOperationsUrl}&notification=true&rangeStart=${minus2Hour.valueOf()}&rangeEnd=${plus48Hours.valueOf()}`
-            , {headers: AuthenticationService.getSecurityHeader(),
+            , {headers: this.authService.getSecurityHeader(),
                 heartbeatTimeout: 600000}));
     }
 

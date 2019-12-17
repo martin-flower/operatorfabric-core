@@ -37,7 +37,8 @@ export class TimeService {
     private timeAtLastHeartBeat: Moment;
     private timeLineFormats: any;
 
-    constructor(private store: Store<AppState>) {
+    constructor(private store: Store<AppState>,
+                private authService: AuthenticationService) {
         this.initializeTimeFormat();
 
         this.store.select(buildConfigSelector('time.pulse',
@@ -103,7 +104,7 @@ export class TimeService {
     initiateTimeReference() {
         const eventSource = new EventSourcePolyfill(
             environment.urls.time,
-            {   headers: AuthenticationService.getSecurityHeader(),
+            {   headers: this.authService.getSecurityHeader(),
                 heartbeatTimeout: 600000
             } as EventSourceInit);
         this.timeReference$ = this.fetchVirtualTime(eventSource);
