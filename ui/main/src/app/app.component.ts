@@ -32,7 +32,7 @@ export class AppComponent implements OnInit {
     isAuthenticated$: boolean = false;
     configLoaded: boolean = false;
     private maxedRetries: boolean = false;
-    private authenticationModeHandler: AuthenticatinoFlowHandler;
+    private authenticationModeHandler: AuthenticationFlowHandler;
 
     /**
      * NB: I18nService is injected to trigger its constructor at application startup
@@ -92,7 +92,7 @@ export function isSessionAuthFlowSetted2Implicit(): boolean {
 }
 
 
-export interface AuthenticatinoFlowHandler {
+export interface AuthenticationFlowHandler {
     initAuth(): void;
 
     linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
@@ -100,7 +100,7 @@ export interface AuthenticatinoFlowHandler {
     iam():string;
 }
 
-export class PasswordOrCodeFlowHandler implements AuthenticatinoFlowHandler {
+export class PasswordOrCodeFlowHandler implements AuthenticationFlowHandler {
     constructor(private store: Store<AppState>) {
     }
 
@@ -119,7 +119,7 @@ export class PasswordOrCodeFlowHandler implements AuthenticatinoFlowHandler {
     iam(){return 'PasswordOrCodeFlowHandler'};
 }
 
-export class ImplicitFlowHandler implements AuthenticatinoFlowHandler {
+export class ImplicitFlowHandler implements AuthenticationFlowHandler {
 
     constructor(private authenticationService: AuthenticationService, private store: Store<AppState>) {
     }
