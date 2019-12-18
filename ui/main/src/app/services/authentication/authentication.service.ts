@@ -104,7 +104,10 @@ export class AuthenticationService {
             const headers = new HttpHeaders({'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'});
             return this.httpClient.post<CheckTokenResponse>(this.checkTokenUrl, postData.toString(), {headers: headers}).pipe(
                 map(check => check),
-                catchError(AuthenticationService.handleError)
+                catchError(function (error: any) {
+                    console.error(error);
+                    return throwError(error);
+                })
             );
         }
         return of(null);
@@ -124,7 +127,7 @@ export class AuthenticationService {
         params.append('grant_type', 'authorization_code');
 // beware clientId for token defines a type of authentication
         params.append('clientId', this.clientId);
-        params.append('redirect_uri', AuthenticationService.computeRedirectUri());
+        params.append('redirect_uri', this.computeRedirectUri());
 
         const headers = new HttpHeaders({'Content-type': 'application/x-www-form-urlencoded; charset=utf-8'});
         return this.handleNewToken(this.httpClient.post<AuthObject>(this.askTokenUrl, params.toString(), {headers: headers}));
@@ -165,8 +168,11 @@ export class AuthenticationService {
                 return {...data, clientId: this.guidService.getCurrentGuid()}
             }),
             map((auth: AuthObject) => this.convert(auth)),
-            tap(AuthenticationService.saveAuthenticationInformation),
-            catchError(AuthenticationService.handleError),
+            tap(this.saveAuthenticationInformation),
+            catchError(function (error: any) {
+                console.error(error);
+                return throwError(error);
+            }),
             switchMap((auth) => this.loadUserData(auth))
         );
     }
@@ -182,14 +188,6 @@ export class AuthenticationService {
                 catchError(e => of(auth))
             );
     }
-
-    return
-
-    private static handleError(error: any) {
-        console.error(error);
-        return throwError(error);
-    }
-
     /**
      * extract the jwt authentication token from the localstorage
      */
@@ -205,7 +203,7 @@ export class AuthenticationService {
     /**
      * @return true if the expiration date stored in the `localestorage` is still running, false otherwise.
      */
-    static verifyExpirationDate(): boolean {
+     verifyExpirationDate(): boolean {
         // + to convert the stored number as a string back to number
         const expirationDate = +localStorage.getItem(LocalStorageAuthContent.expirationDate);
         const isNotANumber = isNaN(expirationDate);
@@ -216,14 +214,14 @@ export class AuthenticationService {
     /**
      * @return true if the expiration date stored in the `localstorage` is over, false otherwise
      */
-    static isExpirationDateOver(): boolean {
-        return !AuthenticationService.verifyExpirationDate();
+     isExpirationDateOver(): boolean {
+        return !this.verifyExpirationDate();
     }
 
     /**
      * clear the `localstorage` from all its content.
      */
-    static clearAuthenticationInformation(): void {
+     clearAuthenticationInformation(): void {
         localStorage.clear();
     }
 
@@ -232,7 +230,7 @@ export class AuthenticationService {
      * `localstorage`.
      * @param payload
      */
-    static saveAuthenticationInformation(payload: PayloadForSuccessfulAuthentication) {
+     saveAuthenticationInformation(payload: PayloadForSuccessfulAuthentication) {
         localStorage.setItem(LocalStorageAuthContent.identifier, payload.identifier);
         localStorage.setItem(LocalStorageAuthContent.token, payload.token);
         localStorage.setItem(LocalStorageAuthContent.expirationDate, payload.expirationDate.getTime().toString());
@@ -244,7 +242,7 @@ export class AuthenticationService {
      * expiration date and clientId
      * @return {PayloadForSuccessfulAuthentication}
      */
-    static extractIdentificationInformation(): PayloadForSuccessfulAuthentication {
+     extractIdentificationInformation(): PayloadForSuccessfulAuthentication {
         return new PayloadForSuccessfulAuthentication(
             localStorage.getItem(LocalStorageAuthContent.identifier),
             Guid.parse(localStorage.getItem(LocalStorageAuthContent.clientId)),
@@ -263,7 +261,7 @@ export class AuthenticationService {
         PayloadForSuccessfulAuthentication {
 
         let expirationDate;
-        const jwt = AuthenticationService.decodeToken(payload.access_token);
+        const jwt = this.decodeToken(payload.access_token);
         if (!!payload.expires_in)
             expirationDate = Date.now() + ONE_SECOND * payload.expires_in;
         else if (!!this.expireClaim)
@@ -290,9 +288,9 @@ export class AuthenticationService {
         if (!this.clientId || !this.clientSecret)
             return throwError('The authentication service is no correctly iniitialized');
         if (!this.delegateUrl)
-            window.location.href = `${environment.urls.auth}/code/redirect_uri=${AuthenticationService.computeRedirectUri()}`;
+            window.location.href = `${environment.urls.auth}/code/redirect_uri=${this.computeRedirectUri()}`;
         else {
-            window.location.href = `${this.delegateUrl}&redirect_uri=${AuthenticationService.computeRedirectUri()}`;
+            window.location.href = `${this.delegateUrl}&redirect_uri=${this.computeRedirectUri()}`;
         }
     }
 
@@ -333,13 +331,13 @@ export class AuthenticationService {
 
     }
 
-    static computeRedirectUri() {
+     computeRedirectUri() {
         const uriBase = location.origin;
         const pathEnd = (location.pathname.length > 1) ? location.pathname : '';
         return `${uriBase}${pathEnd}`
     }
 
-    static decodeToken(token: string): any {
+     decodeToken(token: string): any {
         try {
             return jwt_decode(token);
         } catch (Error) {
