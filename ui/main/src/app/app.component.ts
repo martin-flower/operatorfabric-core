@@ -49,7 +49,6 @@ export class AppComponent implements OnInit {
         }else{
             this.authenticationModeHandler = new PasswordOrCodeFlowHandler(this.store);
         }
-        console.log('==============> flowHandler:',this.authenticationModeHandler.iam());
     }
 
 
@@ -63,18 +62,8 @@ export class AppComponent implements OnInit {
      */
     ngOnInit() {
         console.log(`location: ${location.href}`)
-        let i = window.location.href.indexOf('code');
-        // if (i != -1) {
-        //     this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(i + 5)}))
-        // }
-        // if (isSessionAuthFlowSetted2Implicit()) {
-        //     this.authenticationService.initAndLoadAuth();
-        // }
         this.authenticationModeHandler.initAuth();
         this.store.pipe(select(selectCurrentUrl)).subscribe(url => this.currentPath = url);
-        // this.store.pipe(select(selectExpirationTime),
-        //     map(isInTheFuture)
-        // ).subscribe(isAUth => this.isAuthenticated$ = isAUth);
         this.authenticationModeHandler.linkAuthenticationStatus(
             (isAuthenticated: boolean) => {
                 this.isAuthenticated$ = isAuthenticated;
@@ -108,8 +97,6 @@ export interface AuthenticatinoFlowHandler {
 
     linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
 
-    dispatchAction(): void;
-
     iam():string;
 }
 
@@ -118,13 +105,10 @@ export class PasswordOrCodeFlowHandler implements AuthenticatinoFlowHandler {
     }
 
     initAuth() {
-        // nothing to do for password or code flows
-    }
-
-    dispatchAction() {
-        let i = window.location.href.indexOf('code');
-        if (i != -1) {
-            this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(i + 5)}))
+        const searchCodeString = 'code=';
+        const foundIndex = window.location.href.indexOf(searchCodeString);
+        if (foundIndex !== -1) {
+            this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(foundIndex + searchCodeString.length)}));
         }
     }
 
@@ -146,11 +130,7 @@ export class ImplicitFlowHandler implements AuthenticatinoFlowHandler {
         }
     }
 
-    dispatchAction(): void {// nothing to do for the moment for Implicit flow it's managed by authenticatino service
-    }
-
     linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
-        //need to find a way to have a dynamic
         this.store.pipe(select(selectIsImplicitallyAuthenticated)).subscribe(linker)
     }
     iam(){return 'ImplicitFlowHandler'};
