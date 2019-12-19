@@ -195,7 +195,7 @@ export class AuthenticationEffects {
                 }),
                 withLatestFrom(this.store.select(selectCode)),
                 switchMap(([payload, code]) => {
-                        //no token stored or token invalid
+                        // no token stored or token invalid
                         if (!payload) {
                             if (!!code)
                                 return this.authService.askTokenFromCode(code).pipe(
@@ -246,9 +246,19 @@ export class AuthenticationEffects {
                 }));
 
 
+    // handleLogInAttempt(payload: CheckTokenResponse): AuthenticationActions {
+    //     if (payload) {
+    //         const authInfo = this.authService.extractIdentificationInformation();
+    //         return new AcceptLogIn(authInfo);
+    //
+    //     }
+    //     return this.handleRejectedLogin('invalid token');
+    // }
+
+
     handleErrorOnTokenGeneration(errorResponse, category: string) {
         let message, key;
-        let params = new Map<string>()
+        const params = new Map<string>();
         switch (errorResponse.status) {
             case 401:
                 message = 'Unable to authenticate the user';
@@ -273,15 +283,5 @@ export class AuthenticationEffects {
         return new RejectLogIn({error: errorMsg});
 
     }
-
-    // handleLogInAttempt(payload: CheckTokenResponse): AuthenticationActions {
-    //     if (payload) {
-    //         const authInfo = this.authService.extractIdentificationInformation();
-    //         return new AcceptLogIn(authInfo);
-    //
-    //     }
-    //     return this.handleRejectedLogin('invalid token');
-    // }
-
 
 }

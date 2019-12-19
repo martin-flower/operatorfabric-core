@@ -15,15 +15,15 @@ import {
     PayloadForSuccessfulAuthentication,
     UnAuthenticationFromImplicitFlow
 } from '@ofActions/authentication.actions';
-import {environment} from "@env/environment";
-import {GuidService} from "@ofServices/guid.service";
-import {AppState} from "@ofStore/index";
-import {Store} from "@ngrx/store";
-import {buildConfigSelector} from "@ofSelectors/config.selectors";
-import * as jwt_decode from "jwt-decode";
-import * as _ from "lodash";
-import {User} from "@ofModel/user.model";
-import {EventType as OAuthType, JwksValidationHandler, OAuthEvent, OAuthService,} from "angular-oauth2-oidc";
+import {environment} from '@env/environment';
+import {GuidService} from '@ofServices/guid.service';
+import {AppState} from '@ofStore/index';
+import {Store} from '@ngrx/store';
+import {buildConfigSelector} from '@ofSelectors/config.selectors';
+import * as jwt_decode from 'jwt-decode';
+import * as _ from 'lodash';
+import {User} from '@ofModel/user.model';
+import {EventType as OAuthType, JwksValidationHandler, OAuthEvent, OAuthService} from 'angular-oauth2-oidc';
 import {authConfig} from '@ofServices/authentication/auth-implicit-flow.config';
 
 export enum LocalStorageAuthContent {
@@ -51,13 +51,14 @@ export class AuthenticationService {
     private givenNameClaim: string;
     private familyNameClaim: string;
     private mode: string;
-    private authModeHandler= new PasswordOrCodeAuthenticationHandler();
+    private authModeHandler = new PasswordOrCodeAuthenticationHandler();
 
     /**
      * @constructor
      * @param httpClient - Angular build-in
      * @param guidService - create and store the unique id for this application and user
-     * @param store NGRX store
+     * @param store - NGRX store
+     * @param oauthService - manage implicit flow for OAuth2
      */
     constructor(private httpClient: HttpClient
         , private guidService: GuidService
@@ -119,8 +120,9 @@ export class AuthenticationService {
      */
     askTokenFromCode(code: string):
         Observable<PayloadForSuccessfulAuthentication> {
-        if (!this.clientId || !this.clientSecret || !this.loginClaim)
+        if (!this.clientId || !this.clientSecret || !this.loginClaim) {
             return throwError('The authentication service is no correctly initialized');
+        }
         const params = new URLSearchParams();
         params.append('code', code);
         params.append('grant_type', 'authorization_code');
@@ -138,22 +140,15 @@ export class AuthenticationService {
      * @param login
      * @param password
      */
-    askTokenFromPassword(login
-                             :
-                             string, password
-                             :
-                             string
-    ):
-        Observable<any> {
-        if (!
-            this.clientId || !this.clientSecret
-        )
+    askTokenFromPassword(login: string, password: string): Observable<any> {
+        if (!this.clientId || !this.clientSecret) {
             return throwError('The authentication service is no correctly initialized');
+        }
         const params = new URLSearchParams();
         params.append('username', login);
         params.append('password', password);
         params.append('grant_type', 'password');
-// beware clientId for token defines a type of authentication
+// beware clientId for access_token is an oauth parameters
         params.append('clientId', this.clientId);
         params.append('client_secret', this.clientSecret);
 
@@ -164,7 +159,7 @@ export class AuthenticationService {
     private handleNewToken(call: Observable<AuthObject>): Observable<PayloadForSuccessfulAuthentication> {
         return call.pipe(
             map(data => {
-                return {...data, clientId: this.guidService.getCurrentGuid()}
+                return {...data, clientId: this.guidService.getCurrentGuid()};
             }),
             map((auth: AuthObject) => this.convert(auth)),
             tap(this.saveAuthenticationInformation),
@@ -184,14 +179,14 @@ export class AuthenticationService {
                     auth.lastName = u.lastName;
                     return auth;
                 }),
-                catchError(e => of(auth))
+                catchError(() => of(auth))
             );
     }
+
     /**
      * extract the jwt authentication token from the localstorage
      */
     public extractToken(): string {
-
         const currentAuthModeHandler = this.authModeHandler;
         return currentAuthModeHandler.extractToken();
     }
@@ -199,7 +194,7 @@ export class AuthenticationService {
     /**
      * @return true if the expiration date stored in the `localestorage` is still running, false otherwise.
      */
-     verifyExpirationDate(): boolean {
+    verifyExpirationDate(): boolean {
         // + to convert the stored number as a string back to number
         const expirationDate = +localStorage.getItem(LocalStorageAuthContent.expirationDate);
         const isNotANumber = isNaN(expirationDate);
@@ -210,14 +205,14 @@ export class AuthenticationService {
     /**
      * @return true if the expiration date stored in the `localstorage` is over, false otherwise
      */
-     isExpirationDateOver(): boolean {
+    isExpirationDateOver(): boolean {
         return !this.verifyExpirationDate();
     }
 
     /**
      * clear the `localstorage` from all its content.
      */
-     clearAuthenticationInformation(): void {
+    clearAuthenticationInformation(): void {
         localStorage.clear();
     }
 
@@ -226,7 +221,7 @@ export class AuthenticationService {
      * `localstorage`.
      * @param payload
      */
-     saveAuthenticationInformation(payload: PayloadForSuccessfulAuthentication) {
+    saveAuthenticationInformation(payload: PayloadForSuccessfulAuthentication) {
         localStorage.setItem(LocalStorageAuthContent.identifier, payload.identifier);
         localStorage.setItem(LocalStorageAuthContent.token, payload.token);
         localStorage.setItem(LocalStorageAuthContent.expirationDate, payload.expirationDate.getTime().toString());
@@ -238,12 +233,12 @@ export class AuthenticationService {
      * expiration date and clientId
      * @return {PayloadForSuccessfulAuthentication}
      */
-     extractIdentificationInformation(): PayloadForSuccessfulAuthentication {
+    extractIdentificationInformation(): PayloadForSuccessfulAuthentication {
         return new PayloadForSuccessfulAuthentication(
             localStorage.getItem(LocalStorageAuthContent.identifier),
             Guid.parse(localStorage.getItem(LocalStorageAuthContent.clientId)),
             localStorage.getItem(LocalStorageAuthContent.token),
-            // as getItem return a string, `+` isUsed
+            // as getItem return a string, `+` is used to convert the string into number
             new Date(+localStorage.getItem(LocalStorageAuthContent.expirationDate)),
         );
     }
@@ -251,20 +246,20 @@ export class AuthenticationService {
 
     /**
      * helper method to convert an {AuthObject} instance into a {PayloadForSuccessfulAuthentication} instance.
-     * @param payloadCheckImplicitFlowAuthenticationStatus
+     * @param payload
      */
     public convert(payload: AuthObject):
         PayloadForSuccessfulAuthentication {
 
         let expirationDate;
         const jwt = this.decodeToken(payload.access_token);
-        if (!!payload.expires_in)
+        if (!!payload.expires_in) {
             expirationDate = Date.now() + ONE_SECOND * payload.expires_in;
-        else if (!!this.expireClaim)
+        } else if (!!this.expireClaim) {
             expirationDate = jwt[this.expireClaim];
-        else
+        } else {
             expirationDate = 0;
-
+        }
         return new PayloadForSuccessfulAuthentication(jwt[this.loginClaim],
             payload.clientId,
             payload.access_token,
@@ -281,11 +276,12 @@ export class AuthenticationService {
     }
 
     public moveToCodeFlowLoginPage() {
-        if (!this.clientId || !this.clientSecret)
-            return throwError('The authentication service is no correctly iniitialized');
-        if (!this.delegateUrl)
+        if (!this.clientId || !this.clientSecret) {
+
+        }
+        if (!this.delegateUrl) {
             window.location.href = `${environment.urls.auth}/code/redirect_uri=${this.computeRedirectUri()}`;
-        else {
+        } else {
             window.location.href = `${this.delegateUrl}&redirect_uri=${this.computeRedirectUri()}`;
         }
     }
@@ -308,13 +304,13 @@ export class AuthenticationService {
 
         // Display all events
         this.oauthService.events.subscribe(e => {
-            // tslint:disable-neauthModeHandlerxt-line:no-console
+            // tslint:disable-next-line:no-console
             console.debug('oauth/oidc event', e);
         });
 
         this.oauthService.events
             .pipe(filter(e => e.type === 'session_terminated'))
-            .subscribe(e => {
+            .subscribe(() => {
                 // tslint:disable-next-line:no-console
                 console.debug('Your session has been terminated!');
             });
@@ -322,13 +318,13 @@ export class AuthenticationService {
 
     }
 
-     computeRedirectUri() {
+    computeRedirectUri() {
         const uriBase = location.origin;
         const pathEnd = (location.pathname.length > 1) ? location.pathname : '';
-        return `${uriBase}${pathEnd}`
+        return `${uriBase}${pathEnd}`;
     }
 
-     decodeToken(token: string): any {
+    decodeToken(token: string): any {
         try {
             return jwt_decode(token);
         } catch (Error) {
@@ -367,7 +363,6 @@ export class AuthenticationService {
                 this.store.dispatch(new ImplicitallyAuthenticated());
                 break;
             }
-
             case ('token_error'):
             case('token_refresh_error'):
             case('logout'): {
@@ -375,9 +370,8 @@ export class AuthenticationService {
                 break;
             }
             default: {
-                console.log('================> nothing to do for:', eventType);
+                // console.log('no action to dispatch for:', eventType);
             }
-
         }
     }
 
@@ -396,7 +390,6 @@ export class AuthObject {
     constructor(
         public access_token: string,
         public expires_in: number,    // token_received,
-
         public clientId: Guid,
         public identifier?: string
     ) {
@@ -426,7 +419,6 @@ export class CheckTokenResponse {
 export function isInTheFuture(time: number): boolean {
     return time > Date.now();
 }
-
 
 export interface AuthenticationModeHandler {
     extractToken(): string;

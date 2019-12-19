@@ -16,7 +16,7 @@ import {environment} from '@env/environment';
 import {GuidService} from '@ofServices/guid.service';
 import {LightCard} from '@ofModel/light-card.model';
 import {Page} from '@ofModel/page.model';
-import { TimeService } from './time.service';
+import {TimeService} from './time.service';
 
 @Injectable()
 export class CardService {
@@ -41,18 +41,19 @@ export class CardService {
     }
 
     getCardOperation(): Observable<CardOperation> {
-        let minus2Hour = new Date(new Date().valueOf()-2*60*60*1000);
-        let plus48Hours = new Date(minus2Hour.valueOf()+48*60*60*1000);
-        //security header needed here as SSE request are not intercepted by our header interceptor
+        const minus2Hour = new Date(new Date().valueOf() - 2 * 60 * 60 * 1000);
+        const plus48Hours = new Date(minus2Hour.valueOf() + 48 * 60 * 60 * 1000);
+        // security header needed here as SSE request are not intercepted by our header interceptor
         return this.fetchCardOperation(new EventSourcePolyfill(
             `${this.cardOperationsUrl}&notification=true&rangeStart=${minus2Hour.valueOf()}&rangeEnd=${plus48Hours.valueOf()}`
-            , {headers: this.authService.getSecurityHeader(),
-                heartbeatTimeout: 600000}));
+            , {
+                headers: this.authService.getSecurityHeader(),
+                heartbeatTimeout: 600000
+            }));
     }
 
 
-
-    unsubscribeCardOperation(){
+    unsubscribeCardOperation() {
         this.unsubscribe$.next();
     }
 
@@ -63,13 +64,14 @@ export class CardService {
                     if (!message) {
                         return observer.error(message);
                     }
-                    return observer.next(JSON.parse(message.data,CardOperation.convertTypeIntoEnum));
+                    return observer.next(JSON.parse(message.data, CardOperation.convertTypeIntoEnum));
                 };
                 eventSource.onerror = error => {
-                    console.error(`error occurred from ES: ${error.toString()}`)
-                }
+                    console.error(`error occurred from ES: ${error.toString()}`);
+                };
 
             } catch (error) {
+                console.error('an error occurred', error);
                 return observer.error(error);
             }
             return () => {
@@ -80,10 +82,10 @@ export class CardService {
         });
     }
 
-    public updateCardSubscriptionWithDates(rangeStart:number,rangeEnd:number):Observable<any>{
+    public updateCardSubscriptionWithDates(rangeStart: number, rangeEnd: number): Observable<any> {
         return this.httpClient.post<any>(
             `${this.cardOperationsUrl}`,
-            {rangeStart:rangeStart,rangeEnd: rangeEnd});
+            {rangeStart: rangeStart, rangeEnd: rangeEnd});
     }
 
     loadArchivedCard(id: string): Observable<Card> {

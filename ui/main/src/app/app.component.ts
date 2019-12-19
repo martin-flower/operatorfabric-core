@@ -44,7 +44,7 @@ export class AppComponent implements OnInit {
                 private titleService: Title
         , private authenticationService: AuthenticationService) {
         this.getRoutePE = this.store.pipe(select(selectRouterState));
-        if (isSessionAuthFlowSetted2Implicit()) {
+        if (isSessionAuthFlowSet2Implicit()) {
             this.authenticationModeHandler = new ImplicitFlowHandler(this.authenticationService,this.store);
         }else{
             this.authenticationModeHandler = new PasswordOrCodeFlowHandler(this.store);
@@ -85,7 +85,7 @@ export class AppComponent implements OnInit {
 
 }
 
-export function isSessionAuthFlowSetted2Implicit(): boolean {
+export function isSessionAuthFlowSet2Implicit(): boolean {
     const flow = sessionStorage.getItem('flow');
     return flow && flow === 'implicit';
 }
@@ -124,7 +124,7 @@ export class ImplicitFlowHandler implements AuthenticationFlowHandler {
     }
 
     initAuth(): void {
-        if (isSessionAuthFlowSetted2Implicit()) {
+        if (isSessionAuthFlowSet2Implicit()) {
             this.authenticationService.initAndLoadAuth();
         }
     }
