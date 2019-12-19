@@ -67,12 +67,9 @@ export class AuthenticationEffects {
                 map((loadConfigSuccess: LoadConfigSuccess) => {
                     const flowMode = loadConfigSuccess.payload.config.security.oauth2.flow.mode;
                     if (flowMode && flowMode === 'IMPLICIT') {
-                        console.log('=========================> Send an CheckImplicitFlowAuthentication Action.');
                         return new CheckImplicitFlowAuthenticationStatus();
-                    } else {
-                        console.log('==============> mode:', flowMode);
                     }
-                    return new CheckAuthenticationStatus()
+                    return new CheckAuthenticationStatus();
                 })
             );
 
@@ -243,8 +240,9 @@ export class AuthenticationEffects {
             .pipe(ofType(AuthenticationActionTypes.CheckImplicitFlowAuthenticationStatus),
                 map(action => {
                     this.authService.initAndLoadAuth();
-                    console.log('================> access token:', this.authService.bbbb());
-                    return new UselessAuthAction();
+                    // due to implicit flow mode an explicit rerouting to `/feed` is needed once authenticated
+                    this.router.navigate(['/feed']);
+                    return new  AcceptLogIn(this.authService.providePayloadForSuccessFulAuthenticationFromImplicitFlow());
                 }));
 
 

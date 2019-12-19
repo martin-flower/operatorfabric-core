@@ -87,7 +87,6 @@ export class AppComponent implements OnInit {
 
 export function isSessionAuthFlowSetted2Implicit(): boolean {
     const flow = sessionStorage.getItem('flow');
-    console.log('===================> flow from session storage',flow);
     return flow && flow === 'implicit';
 }
 

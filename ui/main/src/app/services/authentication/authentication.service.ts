@@ -72,9 +72,8 @@ export class AuthenticationService {
                 } else {
                     this.authModeHandler = new PasswordOrCodeAuthenticationHandler();
                 }
-                console.log('===================> mode handler:', this.authModeHandler.iam());
             });
-        this.aaaa();
+        this.dispatchAuthActionFromOAuthEvents();
     }
 
     assignConfigurationProperties(oauth2Conf) {
@@ -194,10 +193,7 @@ export class AuthenticationService {
     public extractToken(): string {
 
         const currentAuthModeHandler = this.authModeHandler;
-        console.log('==============> current authentication mode handler',currentAuthModeHandler.iam());
-        const accessToken = currentAuthModeHandler.extractToken();
-        console.log('==================> accessToken within extractToken', accessToken)
-        return accessToken;
+        return currentAuthModeHandler.extractToken();
     }
 
     /**
@@ -295,17 +291,13 @@ export class AuthenticationService {
     }
 
     public async moveToImplicitFlowLoginPage() {
-        // this.initAndLoadAuth();
         this.oauthService.configure(authConfig);
         await this.oauthService.loadDiscoveryDocument();
         sessionStorage.setItem('flow', 'implicit');
         this.oauthService.initLoginFlow('/some-state;p1=1;p2=2');
-
-        console.log('================> here is id token valid?', this.oauthService.hasValidIdToken());
     }
 
     public async initAndLoadAuth() {
-        console.log(`======================> begining of OAuthService configuration`);
         this.oauthService.configure(authConfig);
         this.oauthService.tokenValidationHandler = new JwksValidationHandler();
         await this.oauthService.loadDiscoveryDocumentAndTryLogin();
@@ -326,8 +318,7 @@ export class AuthenticationService {
                 // tslint:disable-next-line:no-console
                 console.debug('Your session has been terminated!');
             });
-        console.log('=======================> end of OAuthService configuration');
-        this.bbbb();
+        this.askForOauthAccessToken();
 
     }
 
@@ -345,25 +336,28 @@ export class AuthenticationService {
         }
     }
 
-    public aaaa() {
+    public dispatchAuthActionFromOAuthEvents() {
         this.oauthService.events.subscribe(e => {
-            console.log('=================> OAuth2 events:', e);
             this.dispatchAppStateActionFromOAuth2Events(e);
-            console.log('==================> an action should have been dispatched');
         });
     }
 
-    public bbbb() {
-        const hasValidIdToken = this.oauthService.hasValidIdToken();
-        console.log('==============> valid id token? ', hasValidIdToken);
-        const hasValidAccessToken = this.oauthService.hasValidAccessToken();
-        console.log('==============> valid access token? ', hasValidAccessToken);
+    public askForOauthAccessToken() {
         return this.oauthService.getAccessToken();
 
     }
 
     public ccc() {
         this.oauthService.tryLogin();
+    }
+
+    public providePayloadForSuccessFulAuthenticationFromImplicitFlow(): PayloadForSuccessfulAuthentication {
+        const identityClaims = this.oauthService.getIdentityClaims();
+        const identifier = identityClaims['sub'];
+        const clientId = this.guidService.getCurrentGuid();
+        const token = this.askForOauthAccessToken();
+        const expirationDate = new Date(this.oauthService.getAccessTokenExpiration());
+        return new PayloadForSuccessfulAuthentication(identifier, clientId, token, expirationDate);
     }
 
     dispatchAppStateActionFromOAuth2Events(event: OAuthEvent): void {
@@ -436,25 +430,16 @@ export function isInTheFuture(time: number): boolean {
 
 export interface AuthenticationModeHandler {
     extractToken(): string;
-    iam(): string;
 }
 
 export class PasswordOrCodeAuthenticationHandler implements AuthenticationModeHandler {
     public extractToken(): string {
         return localStorage.getItem(LocalStorageAuthContent.token);
     }
-    iam(): string {
-        return 'password or code handler';
-    }
 }
 
 export class ImplicitAuthenticationHandler implements AuthenticationModeHandler {
-    public  extractToken(): string {
-        const accessToken = sessionStorage.getItem('access_token');
-        console.log('======================> access_token from session.storage:', accessToken);
-        return accessToken;
-    }
-    iam(): string {
-        return 'implicit mode handler';
+    public extractToken(): string {
+        return sessionStorage.getItem('access_token');
     }
 }
