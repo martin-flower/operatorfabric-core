@@ -6,7 +6,7 @@ export const authConfig: AuthConfig = {
     redirectUri: window.location.origin,
     silentRefreshRedirectUri: window.location.origin + '/silent-refresh.html',
     clientId: 'opfab-client',
-    scope: 'profile email openid',
+    scope: 'openid profile email',
     showDebugInformation: true,
     sessionChecksEnabled: false,
 };

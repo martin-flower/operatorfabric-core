@@ -72,7 +72,7 @@ export class AuthenticationService {
                 if (this.mode.toLowerCase() === 'implicit') {
                     this.authModeHandler = new ImplicitAuthenticationHandler(this, this.store);
                 } else {
-                    this.authModeHandler = new PasswordOrCodeAuthenticationHandler(this.store);
+                    this.authModeHandler = new PasswordOrCodeAuthenticationHandler(this, this.store);
                 }
             });
         this.dispatchAuthActionFromOAuthEvents();
@@ -385,6 +385,15 @@ export class AuthenticationService {
     public linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
         this.authModeHandler.linkAuthenticationStatus(linker);
     }
+
+    public move(): void {
+        this.authModeHandler.move();
+    }
+
+    public isAuthModeCodeOrImplicitFlow(): boolean {
+        const mode = this.getAuthenticationMode();
+        return mode === 'CODE' || mode === 'IMPLICIT';
+    }
 }
 
 
@@ -432,11 +441,14 @@ export interface AuthenticationModeHandler {
     linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
 
     extractToken(): string;
+
+    move(): void;
 }
 
 export class PasswordOrCodeAuthenticationHandler implements AuthenticationModeHandler {
 
-    constructor(private store: Store<AppState>) {
+    constructor(private authenticationService: AuthenticationService,
+                private store: Store<AppState>) {
     }
 
     initializeAuthentication() {
@@ -456,6 +468,10 @@ export class PasswordOrCodeAuthenticationHandler implements AuthenticationModeHa
     public extractToken(): string {
         return localStorage.getItem(LocalStorageAuthContent.token);
     }
+
+    move(): void {
+        this.authenticationService.moveToCodeFlowLoginPage();
+    }
 }
 
 export class ImplicitAuthenticationHandler implements AuthenticationModeHandler {
@@ -474,5 +490,9 @@ export class ImplicitAuthenticationHandler implements AuthenticationModeHandler 
 
     public extractToken(): string {
         return sessionStorage.getItem('access_token');
+    }
+
+    move() {
+        this.authenticationService.moveToImplicitFlowLoginPage();
     }
 }

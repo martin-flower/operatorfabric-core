@@ -27,29 +27,20 @@ export class LoginComponent implements OnInit {
 
     hide: boolean;
     userForm: FormGroup;
-    codeConf$:Observable<string>;
-    useCodeOrImplicitFlow$: Observable<boolean>;
-    flowMoving: FlowExecutor;
+    useCodeOrImplicitFlow: boolean;
     loginMessage: Message;
-    // codeProvider$: Observable<any>;
     codeProvider: any;
+
     /* istanbul ignore next */
-    constructor( private store: Store<AppState>, private service: AuthenticationService) {}
+    constructor(private store: Store<AppState>, private service: AuthenticationService) {
+    }
 
     ngOnInit() {
-        this.codeConf$ = this.store.select(buildConfigSelector('security.oauth2.flow.mode'));
-        this.codeConf$.subscribe(flowMod =>{
-            if(flowMod === 'CODE'){
-                this.flowMoving = new CodeFlowExecutor(this.service);
-            }else if (flowMod === 'IMPLICIT'){
-                this.flowMoving = new ImplicitFlowExecutor( this.service);
-            }
-        })
-        this.useCodeOrImplicitFlow$ = this.codeConf$.pipe(map(flowMode=>flowMode === 'CODE'|| flowMode === 'IMPLICIT'));
-        this.store.select(selectMessage).pipe(filter(m=>m!=null && m.level==MessageLevel.ERROR))
-            .subscribe(m=>this.loginMessage=m);
+        this.useCodeOrImplicitFlow = this.service.isAuthModeCodeOrImplicitFlow();
+        this.store.select(selectMessage).pipe(filter(m => m != null && m.level === MessageLevel.ERROR))
+            .subscribe(m => this.loginMessage = m);
         this.store.select(buildConfigSelector('security.oauth2.flow.provider'))
-            .subscribe(provider=>this.codeProvider={name:provider});
+            .subscribe(provider => this.codeProvider = {name: provider});
         this.hide = true;
         this.userForm = new FormGroup({
                 identifier: new FormControl(''),
@@ -57,8 +48,6 @@ export class LoginComponent implements OnInit {
             }
         );
     }
-
-
 
     onSubmit(): void {
         if (this.userForm.valid) {
@@ -72,26 +61,8 @@ export class LoginComponent implements OnInit {
         this.userForm.reset();
     }
 
-    codeFlow(): void{
-        this.flowMoving.move();
+    codeFlow(): void {
+        this.service.move();
     }
 
-}
-
-interface FlowExecutor {
-    move():void;
-}
-
-class ImplicitFlowExecutor implements FlowExecutor{
-    constructor(private oauthService: AuthenticationService){}
-    move(){
-        this.oauthService.moveToImplicitFlowLoginPage();
-    }
-}
-
-class CodeFlowExecutor implements FlowExecutor{
-    constructor(private oauthService: AuthenticationService){}
-    move(){
-        this.oauthService.moveToCodeFlowLoginPage()
-    }
 }
