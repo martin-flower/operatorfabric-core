@@ -5,20 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import {AfterContentInit, AfterViewInit, Component, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {select, Store} from '@ngrx/store';
 import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
-import {InitAuthStatus} from '@ofActions/authentication.actions';
 import {AppState} from '@ofStore/index';
 import {selectCurrentUrl, selectRouterState} from '@ofSelectors/router.selectors';
-import {selectExpirationTime, selectIsImplicitallyAuthenticated} from '@ofSelectors/authentication.selectors';
-import {AuthenticationService, isInTheFuture} from "@ofServices/authentication/authentication.service";
+import {AuthenticationService} from "@ofServices/authentication/authentication.service";
 import {LoadConfig} from "@ofActions/config.actions";
-import {selectConfigLoaded, selectMaxedRetries} from "@ofSelectors/config.selectors";
+import {buildConfigSelector, selectConfigLoaded, selectMaxedRetries} from "@ofSelectors/config.selectors";
 import {I18nService} from "@ofServices/i18n.service";
-import {buildConfigSelector} from '@ofSelectors/config.selectors';
 
 @Component({
     selector: 'of-root',

@@ -215,6 +215,8 @@ export class AuthenticationService {
      */
     clearAuthenticationInformation(): void {
         localStorage.clear();
+        sessionStorage.clear();
+        this.oauthService.logOut();
     }
 
     /**
