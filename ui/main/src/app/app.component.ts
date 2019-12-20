@@ -32,7 +32,6 @@ export class AppComponent implements OnInit {
     isAuthenticated$: boolean = false;
     configLoaded: boolean = false;
     private maxedRetries: boolean = false;
-    private authenticationModeHandler: AuthenticationFlowHandler;
 
     /**
      * NB: I18nService is injected to trigger its constructor at application startup
@@ -44,13 +43,7 @@ export class AppComponent implements OnInit {
                 private titleService: Title
         , private authenticationService: AuthenticationService) {
         this.getRoutePE = this.store.pipe(select(selectRouterState));
-        if (isSessionAuthFlowSet2Implicit()) {
-            this.authenticationModeHandler = new ImplicitFlowHandler(this.authenticationService,this.store);
-        }else{
-            this.authenticationModeHandler = new PasswordOrCodeFlowHandler(this.store);
-        }
     }
-
 
     public setTitle(newTitle: string) {
         this.titleService.setTitle(newTitle);
@@ -62,9 +55,9 @@ export class AppComponent implements OnInit {
      */
     ngOnInit() {
         console.log(`location: ${location.href}`)
-        this.authenticationModeHandler.initAuth();
+        this.authenticationService.intializeAuthentication();
         this.store.pipe(select(selectCurrentUrl)).subscribe(url => this.currentPath = url);
-        this.authenticationModeHandler.linkAuthenticationStatus(
+        this.authenticationService.linkAuthenticationStatus(
             (isAuthenticated: boolean) => {
                 this.isAuthenticated$ = isAuthenticated;
             });
@@ -79,58 +72,6 @@ export class AppComponent implements OnInit {
         const sTitle = this.store.select(buildConfigSelector('title', this.title));
         sTitle.subscribe(data => {
             this.setTitle(data);
-        })
+        });
     }
-
-
-}
-
-export function isSessionAuthFlowSet2Implicit(): boolean {
-    const flow = sessionStorage.getItem('flow');
-    return flow && flow === 'implicit';
-}
-
-
-export interface AuthenticationFlowHandler {
-    initAuth(): void;
-
-    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
-
-    iam():string;
-}
-
-export class PasswordOrCodeFlowHandler implements AuthenticationFlowHandler {
-    constructor(private store: Store<AppState>) {
-    }
-
-    initAuth() {
-        const searchCodeString = 'code=';
-        const foundIndex = window.location.href.indexOf(searchCodeString);
-        if (foundIndex !== -1) {
-            this.store.dispatch(new InitAuthStatus({code: window.location.href.substring(foundIndex + searchCodeString.length)}));
-        }
-    }
-
-    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
-        this.store.pipe(select(selectExpirationTime), map(isInTheFuture))
-            .subscribe(linker);
-    }
-    iam(){return 'PasswordOrCodeFlowHandler'};
-}
-
-export class ImplicitFlowHandler implements AuthenticationFlowHandler {
-
-    constructor(private authenticationService: AuthenticationService, private store: Store<AppState>) {
-    }
-
-    initAuth(): void {
-        if (isSessionAuthFlowSet2Implicit()) {
-            this.authenticationService.initAndLoadAuth();
-        }
-    }
-
-    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
-        this.store.pipe(select(selectIsImplicitallyAuthenticated)).subscribe(linker)
-    }
-    iam(){return 'ImplicitFlowHandler'};
 }

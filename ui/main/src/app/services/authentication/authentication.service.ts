@@ -11,20 +11,21 @@ import {Observable, of, throwError} from 'rxjs';
 import {catchError, filter, map, switchMap, tap} from 'rxjs/operators';
 import {Guid} from 'guid-typescript';
 import {
-    ImplicitallyAuthenticated,
+    ImplicitallyAuthenticated, InitAuthStatus,
     PayloadForSuccessfulAuthentication,
     UnAuthenticationFromImplicitFlow
 } from '@ofActions/authentication.actions';
 import {environment} from '@env/environment';
 import {GuidService} from '@ofServices/guid.service';
 import {AppState} from '@ofStore/index';
-import {Store} from '@ngrx/store';
+import {select, Store} from '@ngrx/store';
 import {buildConfigSelector} from '@ofSelectors/config.selectors';
 import * as jwt_decode from 'jwt-decode';
 import * as _ from 'lodash';
 import {User} from '@ofModel/user.model';
 import {EventType as OAuthType, JwksValidationHandler, OAuthEvent, OAuthService} from 'angular-oauth2-oidc';
 import {authConfig} from '@ofServices/authentication/auth-implicit-flow.config';
+import {selectExpirationTime, selectIsImplicitallyAuthenticated} from '@ofSelectors/authentication.selectors';
 
 export enum LocalStorageAuthContent {
     token = 'token',
@@ -51,7 +52,7 @@ export class AuthenticationService {
     private givenNameClaim: string;
     private familyNameClaim: string;
     private mode: string;
-    private authModeHandler = new PasswordOrCodeAuthenticationHandler();
+    private authModeHandler: AuthenticationModeHandler;
 
     /**
      * @constructor
@@ -69,9 +70,9 @@ export class AuthenticationService {
             .subscribe(oauth2Conf => {
                 this.assignConfigurationProperties(oauth2Conf);
                 if (this.mode.toLowerCase() === 'implicit') {
-                    this.authModeHandler = new ImplicitAuthenticationHandler();
+                    this.authModeHandler = new ImplicitAuthenticationHandler(this, this.store);
                 } else {
-                    this.authModeHandler = new PasswordOrCodeAuthenticationHandler();
+                    this.authModeHandler = new PasswordOrCodeAuthenticationHandler(this.store);
                 }
             });
         this.dispatchAuthActionFromOAuthEvents();
@@ -343,10 +344,6 @@ export class AuthenticationService {
 
     }
 
-    public ccc() {
-        this.oauthService.tryLogin();
-    }
-
     public providePayloadForSuccessFulAuthenticationFromImplicitFlow(): PayloadForSuccessfulAuthentication {
         const identityClaims = this.oauthService.getIdentityClaims();
         const identifier = identityClaims['sub'];
@@ -379,6 +376,13 @@ export class AuthenticationService {
         return this.mode;
     }
 
+    public intializeAuthentication(): void {
+        this.authModeHandler.initializeAuthentication();
+    }
+
+    public linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
+        this.authModeHandler.linkAuthenticationStatus(linker);
+    }
 }
 
 
@@ -421,16 +425,51 @@ export function isInTheFuture(time: number): boolean {
 }
 
 export interface AuthenticationModeHandler {
+    initializeAuthentication(): void;
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void;
+
     extractToken(): string;
 }
 
 export class PasswordOrCodeAuthenticationHandler implements AuthenticationModeHandler {
+
+    constructor(private store: Store<AppState>) {
+    }
+
+    initializeAuthentication() {
+        const searchCodeString = 'code=';
+        const foundIndex = window.location.href.indexOf(searchCodeString);
+        if (foundIndex !== -1) {
+            this.store.dispatch(
+                new InitAuthStatus({code: window.location.href.substring(foundIndex + searchCodeString.length)}));
+        }
+    }
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
+        this.store.pipe(select(selectExpirationTime), map(isInTheFuture))
+            .subscribe(linker);
+    }
+
     public extractToken(): string {
         return localStorage.getItem(LocalStorageAuthContent.token);
     }
 }
 
 export class ImplicitAuthenticationHandler implements AuthenticationModeHandler {
+    constructor(private authenticationService: AuthenticationService, private store: Store<AppState>) {
+    }
+
+    initializeAuthentication(): void {
+        if (this.authenticationService.getAuthenticationMode() === 'IMPLICIT') {
+            this.authenticationService.initAndLoadAuth();
+        }
+    }
+
+    linkAuthenticationStatus(linker: (isAuthenticated: boolean) => void): void {
+        this.store.pipe(select(selectIsImplicitallyAuthenticated)).subscribe(linker);
+    }
+
     public extractToken(): string {
         return sessionStorage.getItem('access_token');
     }
