@@ -103,6 +103,8 @@ export class DetailComponent implements OnInit, OnChanges {
             scriptCopy.type = script.type ? script.type : 'text/javascript';
             if (script.innerHTML) {
                 scriptCopy.innerHTML = script.innerHTML;
+            } else if (script.src) {
+                scriptCopy.src = script.src;
             }
             scriptCopy.async = false;
             script.parentNode.replaceChild(scriptCopy, script);
