@@ -10,6 +10,12 @@
         <of-archive-filters></of-archive-filters>
     </div>
 </div>
+<div class="alert alert-info" role="alert">
+    <div *ngIf="isEmpty$|async; else lightCardsBlock">
+        <h1><label translate>archive.noResult</label></h1>
+    </div>
+</div>
+<ng-template #lightCardsBlock>
 <div class="row">
     <div class="col-3">
         <of-archive-list [lightCards]="lightCards$|async" [selection]="selection$"></of-archive-list>
@@ -18,3 +24,4 @@
         <router-outlet></router-outlet>
     </div>
 </div>
+</ng-template>

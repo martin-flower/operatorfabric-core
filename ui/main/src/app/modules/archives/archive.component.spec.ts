@@ -61,7 +61,6 @@ describe('ArchivesComponent', () => {
         component = fixture.componentInstance;
         compiled = fixture.debugElement.nativeElement;
         fixture.detectChanges();
-
     });
 
     it('should create an the app-archives component', () => {
