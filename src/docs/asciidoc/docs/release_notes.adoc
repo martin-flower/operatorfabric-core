@@ -56,10 +56,9 @@ or the entry about [OC-744] of this current file.
 * [OC-748] Remove button "log in using keyCloak", go directly to login page
 * [OC-738] Add a group perimeter object in the user service
 
-[NOTE]
-====
-Work is still in progress. The object is not usable at the moment.
-====
+== Bugs
+* [OC-772] Bug on archives screen: clear results when exiting archive page.
+* [OC-898] In implicit mode, firstname and last name are not displayed
 
 * [OC-877] User Service : Implement endpoint GET /CurrentUserWithPerimeters
 
