@@ -1,0 +1,35 @@
+{
+  "name": "TEST",
+  "version": "1",
+  "defaultLocale": "fr",
+  "templates": [
+    "template1"
+  ],
+  "csses": [
+  ],
+  "menuEntries": [
+  ],
+  "processes": {
+    "process": {
+      "states": {
+        "state": {
+          "response": {
+            "lock": true,
+            "state": "responseState"
+          },
+          "details": [
+            {
+              "title": {
+                "key": "cardDetails.title"
+              },
+              "templateName": "template1",
+              "styles": [
+                "main"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

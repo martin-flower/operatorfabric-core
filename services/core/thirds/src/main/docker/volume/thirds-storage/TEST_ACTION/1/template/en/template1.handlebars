@@ -1,0 +1,16 @@
+{{#if responseData }}
+  <button id='btn-action' class='btn-success'>ACTION</button>
+{{else}}
+  No action allowed
+{{/if}}
+
+<script>
+
+  document.getElementById("btn-action").onclick = function() { action({{json responseData}}) };
+
+/* myFunction toggles between adding and removing the show class, which is used to hide and show the dropdown content */
+function action(responseData) {
+  ext_action(responseData);
+}
+
+</script>

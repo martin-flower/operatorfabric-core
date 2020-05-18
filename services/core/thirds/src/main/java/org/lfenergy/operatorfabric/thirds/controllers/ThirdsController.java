@@ -197,4 +197,11 @@ public class ThirdsController implements ThirdsApi {
         return getState(request, response, thirdName, processName, stateName, apiVersion)
                 .getDetails();
     }
+
+    @Override
+    public Response getResponse(HttpServletRequest request, HttpServletResponse response, String thirdName, String processName,
+                              String stateName, String apiVersion) {
+        return getState(request, response, thirdName, processName, stateName, apiVersion)
+                .getResponse();
+    }
 }

@@ -145,6 +145,7 @@ describe('DetailComponent', () => {
             done();
         },1000);
     });
+
     it('should create css link when styles are set in the details', (done)=>{
         component.card = getOneRandomCardWithRandomDetails();
         const details = component.card.details

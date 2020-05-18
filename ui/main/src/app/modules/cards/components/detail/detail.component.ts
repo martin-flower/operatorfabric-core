@@ -11,7 +11,7 @@ import {Card, Detail} from '@ofModel/card.model';
 import {ThirdsService} from '@ofServices/thirds.service';
 import {HandlebarsService} from '../../services/handlebars.service';
 import {DomSanitizer, SafeHtml, SafeResourceUrl} from '@angular/platform-browser';
-import {Action, Third} from '@ofModel/thirds.model';
+import {Action, Third, ThirdResponse} from '@ofModel/thirds.model';
 import {zip} from 'rxjs';
 import {DetailContext} from '@ofModel/detail-context.model';
 import {Store} from '@ngrx/store';
@@ -20,6 +20,7 @@ import {selectAuthenticationState} from '@ofSelectors/authentication.selectors';
 import {UserContext} from '@ofModel/user-context.model';
 import {TranslateService} from '@ngx-translate/core';
 import {I18n} from '@ofModel/i18n.model';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
     selector: 'of-detail',
@@ -85,17 +86,26 @@ export class DetailComponent implements OnInit, OnChanges {
 
     private initializeHandlebarsTemplates() {
 
-        zip(this.thirds.queryThirdFromCard(this.card),
-        this.handlebars.executeTemplate(this.detail.templateName, new DetailContext(this.card, this.userContext)))
+        let responseData: ThirdResponse;
+        let third: Third;
+
+        this.thirds.queryThirdFromCard(this.card).pipe(
+            switchMap(thirdElt => {
+                third = thirdElt;
+                responseData = third.processes[this.card.process].states[this.card.state].response;
+                console.log(responseData)
+                return this.handlebars.executeTemplate(this.detail.templateName, new DetailContext(this.card, this.userContext, responseData));
+            })
+        )
             .subscribe(
-                ([third, html]) => {
-                this._htmlContent = this.sanitizer.bypassSecurityTrustHtml(html);
-                setTimeout(() => { // wait for DOM rendering
-                    this.reinsertScripts();
-                    this.bindActions(third);
-                });
-            }
-        );
+                html => {
+                    this._htmlContent = this.sanitizer.bypassSecurityTrustHtml(html);
+                    setTimeout(() => { // wait for DOM rendering
+                        this.reinsertScripts();
+                        this.bindActions(third);
+                    });
+                }
+            );
     }
 
 
