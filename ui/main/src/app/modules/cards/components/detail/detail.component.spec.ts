@@ -30,6 +30,7 @@ import {By} from '@angular/platform-browser';
 import {of} from 'rxjs';
 import {Action, ActionType, Process, State} from '@ofModel/thirds.model';
 import {Map as OfMap} from '@ofModel/map';
+import {Detail} from '@ofModel/card.model';
 import {RouterTestingModule} from '@angular/router/testing';
 
 describe('DetailComponent', () => {
@@ -65,6 +66,8 @@ describe('DetailComponent', () => {
         injector = getTestBed();
         httpMock = injector.get(HttpTestingController);
         thirdsService = TestBed.get(ThirdsService);
+
+
     }));
 
     beforeEach(() => {
@@ -76,14 +79,42 @@ describe('DetailComponent', () => {
     // })
 
     it('should create', () => {
-        component.card = getOneRandomCard();
+        const processesMap = new OfMap();
+        const statesMap = new OfMap();
+        const details = [new Detail(null, getRandomI18nData(), null, 'template3', null),
+            new Detail(null, getRandomI18nData(), null, 'template4', null)];
+        statesMap['state01'] = new State(details);
+        processesMap['process01'] = new Process(statesMap);
+        const third = getOneRandomThird({
+            processes: processesMap
+        });
+        spyOn(thirdsService, 'queryThird').and.returnValue(of(third));
+        component.card = getOneRandomCard({
+            process: 'process01',
+            processId: 'process01_01',
+            state: 'state01',
+        });
         component.detail = component.card.details[0];
+
         fixture.detectChanges();
         expect(component).toBeTruthy();
     });
     it('should load template with script', ()=>{
-        spyOn(thirdsService, 'queryThird').and.returnValue(of(getOneRandomThird()));
-        component.card = getOneRandomCard();
+                const processesMap = new OfMap();
+        const statesMap = new OfMap();
+        const details = [new Detail(null, getRandomI18nData(), null, 'template3', null),
+            new Detail(null, getRandomI18nData(), null, 'template4', null)];
+        statesMap['state01'] = new State(details);
+        processesMap['process01'] = new Process(statesMap);
+        const third = getOneRandomThird({
+            processes: processesMap
+        });
+        spyOn(thirdsService, 'queryThird').and.returnValue(of(third));
+        component.card = getOneRandomCard({
+            process: 'process01',
+            processId: 'process01_01',
+            state: 'state01',
+        });
         component.detail = component.card.details[0];
         component.ngOnInit();
         let calls = httpMock.match(req => req.url == `${environment.urls.thirds}/testPublisher/templates/template1`);

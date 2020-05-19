@@ -478,14 +478,14 @@ describe('Handlebars Services', () => {
             const templateName = Guid.create().toString();
             handlebarsService.executeTemplate(templateName, new DetailContext(card, userContext, null))
                 .subscribe((result) => {
-                    expect(result).toEqual(now.format('MMMM Do YYYY, h:mm:ss a'));
+                    expect(result).toEqual(now.format('MMMM Do YYYY'));
                     done();
                 });
             let calls = httpMock.match(req => req.url == computeTemplateUri(templateName));
             expect(calls.length).toEqual(1);
             calls.forEach(call => {
                 expect(call.request.method).toBe('GET');
-                call.flush('{{dateFormat (now "") format="MMMM Do YYYY, h:mm:ss a"}}');
+                call.flush('{{dateFormat (now "") format="MMMM Do YYYY"}}');
             });
         });
         it('compile preserveSpace', (done) => {

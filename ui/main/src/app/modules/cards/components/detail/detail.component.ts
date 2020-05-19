@@ -91,9 +91,7 @@ export class DetailComponent implements OnInit, OnChanges {
 
         this.thirds.queryThirdFromCard(this.card).pipe(
             switchMap(thirdElt => {
-                third = thirdElt;
-                responseData = third.processes[this.card.process].states[this.card.state].response;
-                console.log(responseData)
+                responseData = thirdElt.processes[this.card.process].states[this.card.state].response;
                 return this.handlebars.executeTemplate(this.detail.templateName, new DetailContext(this.card, this.userContext, responseData));
             })
         )
