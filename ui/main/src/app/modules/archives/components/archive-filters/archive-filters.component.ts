@@ -17,7 +17,8 @@ import { DateTimeNgb } from '@ofModel/datetime-ngb.model';
 import { NgbDateStruct, NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { TimeService } from '@ofServices/time.service';
 import { TranslateService } from '@ngx-translate/core';
-
+import { map } from 'rxjs/operators';
+import { UserService } from '@ofServices/user.service';
 
 export enum FilterDateTypes {
   PUBLISH_DATE_FROM_PARAM = 'publishDateFrom',
@@ -53,7 +54,7 @@ export class ArchiveFiltersComponent implements OnInit {
 
   archiveForm: FormGroup;
 
-  constructor(private store: Store<AppState>, private timeService: TimeService,private translateService: TranslateService) {
+  constructor(private store: Store<AppState>, private timeService: TimeService, private translateService: TranslateService, private userService: UserService) {
     this.archiveForm = new FormGroup({
       tags: new FormControl(''),
       process: new FormControl(),
@@ -66,7 +67,34 @@ export class ArchiveFiltersComponent implements OnInit {
 
 
   ngOnInit() {
-    this.tags$ = this.store.select(buildConfigSelector('archive.filters.tags.list'));
+
+    // -------- [OC-932] In the Archives filters, make a filter field visible or not based on the user group(s) -------- //
+    this.store.select(buildConfigSelector('archive.filters.tags'))
+      .subscribe(tags => {
+        if (!tags['filter-by-group']) {
+          this.tags$ = this.store.select(buildConfigSelector('archive.filters.tags.list'));
+        } else {
+          this.userService.getUserGroups().subscribe(
+              groups => {
+        
+                console.log("GROUPS");
+                console.log(groups);
+                this.tags$ = this.store.select(buildConfigSelector('archive.filters.tags.list'))
+                  .pipe(
+                    map(tags => tags.filter(tag => tag.group ? groups.includes(tag.group) : true))
+                  )
+              },
+              err => {
+                console.error('ERROR' + err);
+                this.tags$ = this.store.select(buildConfigSelector('archive.filters.tags.list'));
+              }
+            )
+        }
+      })
+
+    // this.tags$ = this.store.select(buildConfigSelector('archive.filters.tags.list'));
+    // ------------------------------------------------------------------------------------------------------------------ //
+
     this.processes$ = this.store.select(buildConfigSelector('archive.filters.process.list'));
     this.size$ = this.store.select(buildConfigSelector('archive.filters.page.size'));
     this.first$ = this.store.select(buildConfigSelector('archive.filters.page.first'));
