@@ -28,12 +28,6 @@ Launch the `startserver.sh` in the server directory. You need to wait for all th
 
 Test the connection to the UI: to connect to OperatorFabric, open in a browser the following page: http://localhost:2002/ui/ and use `tso1-operator` as login and `test` as password.
 
-If you are not accessing the server from localhost, there is a bug with authentication redirection. Your must use the following URL, replacing `SERVER_IP` by the IP address of your server :
-
----- 
-http://SERVER_IP:89/auth/realms/dev/protocol/openid-connect/auth?response_type=code&client_id=opfab-client&redirect_uri=http://SERVER_IP:2002/ui/
-----
-
 After connection, you should see the following screen
 
 image::empty-opfab-page.jpg[empty opfab screenshot]
