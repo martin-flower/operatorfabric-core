@@ -32,6 +32,10 @@ import {AboutComponent} from './modules/about/about.component';
 import {FontAwesomeIconsModule} from './modules/utilities/fontawesome-icons.module';
 import {LoggingModule} from './modules/logging/logging.module';
 import {MonitoringModule} from './modules/monitoring/monitoring.module';
+import {CalendarModule} from './modules/calendar/calendar.module';
+
+
+
 
 @NgModule({
     imports: [
@@ -50,7 +54,8 @@ import {MonitoringModule} from './modules/monitoring/monitoring.module';
         UtilitiesModule,
         LoggingModule,
         MonitoringModule,
-        AppRoutingModule
+        AppRoutingModule,
+        CalendarModule
     ],
     declarations: [AppComponent,
         NavbarComponent,
@@ -67,3 +72,5 @@ import {MonitoringModule} from './modules/monitoring/monitoring.module';
 export class AppModule {
 
 }
+
+

@@ -180,8 +180,7 @@ And match response.count == 1
 			"title" : {"key" : "question.title"},
 			"data" : {"message":" Action Card"},
 			"timeSpans" : [
-				{"start" : startDate},
-				{"start" : endDate}
+				{"start" : startDate ,"end" : endDate}
 				]
 		}
 
