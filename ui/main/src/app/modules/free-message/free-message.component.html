@@ -1,0 +1,61 @@
+<!-- Copyright (c) 2020, RTE (http://www.rte-france.com)              -->
+<!-- See AUTHORS.txt                                                       -->
+<!-- This Source Code Form is subject to the terms of the Mozilla Public   -->
+<!-- License, v. 2.0. If a copy of the MPL was not distributed with this   -->
+<!-- file, You can obtain one at http://mozilla.org/MPL/2.0/.              -->
+<!-- SPDX-License-Identifier: MPL-2.0                                      -->
+<!-- This file is part of the OperatorFabric project.                      -->
+
+<div class="text-center text-secondary py-3" translate>free-message.title</div>
+
+<form [formGroup]="messageForm" (ngSubmit)="onSubmitForm()">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <of-single-filter i18nRootLabelKey="free-message.filters."
+                                  [parentForm]="messageForm"
+                                  filterPath="severity"
+                                  [values]="severityOptions"></of-single-filter>
+            </div>
+            <div class="col">
+                <of-single-filter i18nRootLabelKey="free-message.filters."
+                                  [parentForm]="messageForm"
+                                  filterPath="process"
+                                  [valuesInObservable]="processOptions$"></of-single-filter>
+            </div>
+            <div class="col">
+                <of-single-filter i18nRootLabelKey="free-message.filters."
+                                  [parentForm]="messageForm"
+                                  filterPath="state"
+                                  [valuesInObservable]="stateOptions$"></of-single-filter>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <of-datetime-filter filterPath="startDate" formControlName="startDate"
+                                    labelKey="free-message.filters."></of-datetime-filter>
+            </div>
+            <div class="col">
+                <of-datetime-filter filterPath="endDate" formControlName="endDate"
+                                    labelKey="free-message.filters."></of-datetime-filter>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <of-text-area i18nRootLabelKey="free-message.filters."
+                              [parentForm]="messageForm"
+                              filterPath="comment"
+                              lineNumber=4></of-text-area>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <of-single-filter i18nRootLabelKey="free-message.filters."
+                                  [parentForm]="messageForm"
+                                  filterPath="entities"
+                                  [valuesInObservable]="entityOptions$"></of-single-filter>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>

@@ -27,6 +27,7 @@ import {EffectsModule} from '@ngrx/effects';
 import {MenuEffects} from '@ofEffects/menu.effects';
 import {UpdateTranslation} from '@ofActions/translate.actions';
 import {TranslateEffects} from '@ofEffects/translate.effects';
+import {I18n} from "@ofModel/i18n.model";
 
 describe('Processes Services', () => {
     let injector: TestBed;
@@ -108,12 +109,12 @@ describe('Processes Services', () => {
             expect(calls.length).toEqual(1);
             calls[0].flush([
                 new Process(
-                    'process1', '1', 'process1.label', [], [], [], 'process1.menu.label',
+                    'process1', '1', new I18n('process1.label'), [], [], [], 'process1.menu.label',
                     [new MenuEntry('id1', 'label1', 'link1'),
                         new MenuEntry('id2', 'label2', 'link2')]
                 ),
                 new Process(
-                    'process2', '1', 'process2.label', [], [], [], 'process2.menu.label',
+                    'process2', '1', new I18n('process2.label'), [], [], [], 'process2.menu.label',
                     [new MenuEntry('id3', 'label3', 'link3')]
                 )
             ]);
@@ -223,7 +224,7 @@ describe('Processes Services', () => {
 
     });
     describe('#queryProcess', () => {
-        const businessconfig = new Process('testPublisher', '0', 'businessconfig.label');
+        const businessconfig = new Process('testPublisher', '0', new I18n('businessconfig.label'));
         it('should load businessconfig from remote server', () => {
             processesService.queryProcess('testPublisher', '0')
                 .subscribe((result) => expect(result).toEqual(businessconfig));
@@ -236,7 +237,7 @@ describe('Processes Services', () => {
         });
     });
     describe('#queryProcess', () => {
-        const businessconfig = new Process('testPublisher', '0', 'businessconfig.label');
+        const businessconfig = new Process('testPublisher', '0', new I18n('businessconfig.label'));
         it('should load and cache businessconfig from remote server', () => {
             processesService.queryProcess('testPublisher', '0')
                 .subscribe((result) => {

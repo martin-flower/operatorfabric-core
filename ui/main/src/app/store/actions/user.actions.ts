@@ -8,7 +8,7 @@
  */
 
 
-import {User} from '@ofModel/user.model';
+import {Entity, User} from '@ofModel/user.model';
 import {Action} from '@ngrx/store';
 
 export enum UserActionsTypes {
@@ -17,7 +17,9 @@ export enum UserActionsTypes {
     CreateUserApplication =             '[User] Create the User in the application',
     CreateUserApplicationOnSuccess =    '[User] Create the User in the application on success',
     CreateUserApplicationOnFailure =    '[User] Create the User in the application on failure',
-    HandleUnexpectedError =             '[User] Handle unexpected error related to user creation issue'
+    HandleUnexpectedError =             '[User] Handle unexpected error related to user creation issue',
+    QueryAllEntities =                  '[User] Ask to fetch all entities',
+    LoadAllEntities =                   '[User] Load all entities'
 }
 
 export class UserApplicationRegistered implements Action {
@@ -45,16 +47,27 @@ export class CreateUserApplicationOnFailure implements Action {
     constructor(public payload : {error : Error}) {}
 }
 
-
 export class HandleUnexpectedError implements Action {
     /* istanbul ignore next */ 
     readonly type = UserActionsTypes.HandleUnexpectedError;
     constructor(public payload : {error : Error}) {}
 }
 
+export class QueryAllEntities implements Action {
+    readonly type = UserActionsTypes.QueryAllEntities;
+}
+
+export class LoadAllEntities implements Action {
+    readonly type = UserActionsTypes.LoadAllEntities;
+    constructor(public payload: { entities: Entity[] }) {
+    }
+}
+
 export type UserActions = UserApplicationRegistered
     | CreateUserApplication
     | CreateUserApplicationOnSuccess
     | CreateUserApplicationOnFailure
-    | HandleUnexpectedError;
+    | HandleUnexpectedError
+    | QueryAllEntities
+    | LoadAllEntities;
 

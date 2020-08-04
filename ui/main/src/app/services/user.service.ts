@@ -8,12 +8,12 @@
  */
 
 
-import { Injectable } from "@angular/core";
-import { environment } from '@env/environment';
-import { Observable } from 'rxjs';
-import { User} from '@ofModel/user.model';
-import { UserWithPerimeters } from '@ofModel/userWithPerimeters.model';
-import { HttpClient } from '@angular/common/http';
+import {Injectable} from "@angular/core";
+import {environment} from '@env/environment';
+import {Observable} from 'rxjs';
+import {Entity, User} from '@ofModel/user.model';
+import {UserWithPerimeters} from '@ofModel/userWithPerimeters.model';
+import {HttpClient} from '@angular/common/http';
 
 @Injectable()
 export class UserService {
@@ -38,5 +38,10 @@ export class UserService {
 
     currentUserWithPerimeters(): Observable<UserWithPerimeters> {
         return this.httpClient.get<UserWithPerimeters>(`${this.userUrl}/CurrentUserWithPerimeters`);
+    }
+
+    queryAllEntities(): Observable<Entity[]> {
+        return this.httpClient.get<Entity[]>(`${this.userUrl}/entities`);
+
     }
 }

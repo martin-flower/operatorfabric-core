@@ -46,6 +46,7 @@ export class MultiFilterComponent implements OnInit {
             if (!!this.valuesInObservable) {
                 this.valuesInObservable.pipe(
                     map((values: ({ value: string, label: (I18n | string) } | string)[]) => {
+                            this.preparedList = [];
                             for (const v of values) {
                                 this.preparedList.push(this.computeValueAndLabel(v));
                             }
@@ -68,10 +69,10 @@ export class MultiFilterComponent implements OnInit {
         } else if (!entry.label) {
             return {value: entry.value, label: of(entry.value)};
         }
-            return {
-                value: entry.value,
-                label: this.translateService.get(entry.label.key, entry.label.parameters)
-            };
+        return {
+            value: entry.value,
+            label: this.translateService.get(entry.label.key, entry.label.parameters)
+        };
 
     }
 

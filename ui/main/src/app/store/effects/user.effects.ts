@@ -18,13 +18,14 @@ import {
     CreateUserApplication,
     CreateUserApplicationOnFailure,
     CreateUserApplicationOnSuccess,
+    LoadAllEntities,
     UserActions,
     UserActionsTypes,
     UserApplicationRegistered
 } from '@ofStore/actions/user.actions';
 import {AcceptLogIn, AuthenticationActionTypes} from '@ofStore/actions/authentication.actions';
 import {catchError, map, switchMap} from 'rxjs/operators';
-import {User} from '@ofModel/user.model';
+import {Entity, User} from '@ofModel/user.model';
 import {AuthenticationService} from "@ofServices/authentication/authentication.service";
 
 
@@ -99,4 +100,13 @@ export class UserEffects {
             })
         );
 
+    /**
+     * Query all existing entities from the Users service
+     */
+    @Effect()
+    loadAllEntities: Observable<UserActions> = this.actions$.pipe(
+        ofType(UserActionsTypes.QueryAllEntities),
+        switchMap(() => this.userService.queryAllEntities()),
+        map((allEntities: Entity[]) => new LoadAllEntities({entities: allEntities}))
+    );
 }

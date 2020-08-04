@@ -24,12 +24,16 @@ const routes: Routes = [
         loadChildren: () => import('./modules/feed/feed.module').then(m => m.FeedModule),
     },
     {
-        path: 'monitoring',
-        component: MonitoringComponent
-    },
-    {
         path: archivePath,
         loadChildren: () => import('./modules/archives/archives.module').then(m => m.ArchivesModule),
+    },
+    {
+        path: 'freemessage',
+        loadChildren: () => import('./modules/free-message/free-message.module').then(m => m.FreeMessageModule),
+    },
+    {
+        path: 'monitoring',
+        component: MonitoringComponent
     },
     {
         path: 'logging',
