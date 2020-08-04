@@ -10,7 +10,7 @@
 
 import {LightCard, Severity} from '@ofModel/light-card.model';
 import {CardOperation, CardOperationType} from '@ofModel/card-operation.model';
-import {Process, State, Menu, MenuEntry} from '@ofModel/processes.model';
+import {Menu, MenuEntry, Process, State} from '@ofModel/processes.model';
 import {Card, Detail, TitlePosition} from '@ofModel/card.model';
 import {I18n} from '@ofModel/i18n.model';
 import {Map as OfMap, Map} from '@ofModel/map';
@@ -71,15 +71,6 @@ export function getRandomMenus(): Menu[] {
     return result;
 }
 
-export function getRandomBusinessconfig(): Process[] {
-    let result: Process[] = [];
-    let businessconfigCount = getPositiveRandomNumberWithinRange(1,3);
-    for (let i=0;i<businessconfigCount;i++){
-        result.push(getOneRandomProcess());
-    }
-    return result;
-}
-
 export function getOneRandomProcess(processTemplate?:any): Process {
     processTemplate=processTemplate?processTemplate:{};
     let entries:MenuEntry[]=[];
@@ -91,7 +82,6 @@ export function getOneRandomProcess(processTemplate?:any): Process {
             getRandomAlphanumericValue(3,10)
         ))
     }
-    let processes= new OfMap();
     let states = new OfMap();
     let stateCount = getPositiveRandomNumberWithinRange(1,3);
     for(let j=0; j<stateCount;j++){
